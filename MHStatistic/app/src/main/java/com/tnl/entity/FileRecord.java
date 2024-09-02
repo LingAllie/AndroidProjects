@@ -2,12 +2,14 @@ package com.tnl.entity;
 
 public class FileRecord {
 
-    private final String fileName;
-    private final String importDate;
+    private String fileName;
+    private String importDate;
+    private String folderName; // Add this field
 
-    public FileRecord(String fileName, String importDate) {
+    public FileRecord(String fileName, String importDate, String folderName) {
         this.fileName = fileName;
         this.importDate = importDate;
+        this.folderName = folderName; // Initialize the folder name
     }
 
     public String getFileName() {
@@ -16,5 +18,9 @@ public class FileRecord {
 
     public String getImportDate() {
         return importDate;
+    }
+
+    public String getFolderName() {
+        return folderName; // Getter for folder name
     }
 }

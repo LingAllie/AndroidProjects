@@ -14,10 +14,12 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.ViewHolder
 
     private List<String> folderList;
     private OnFolderClickListener onFolderClickListener;
+    private OnFolderLongClickListener onFolderLongClickListener;
 
-    public FolderAdapter(List<String> folderList, OnFolderClickListener listener) {
+    public FolderAdapter(List<String> folderList, OnFolderClickListener clickListener, OnFolderLongClickListener longClickListener) {
         this.folderList = folderList;
-        this.onFolderClickListener = listener;
+        this.onFolderClickListener = clickListener;
+        this.onFolderLongClickListener = longClickListener;
     }
 
     @NonNull
@@ -32,6 +34,10 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.ViewHolder
         String folderName = folderList.get(position);
         holder.folderNameTextView.setText(folderName);
         holder.itemView.setOnClickListener(v -> onFolderClickListener.onFolderClick(folderName));
+        holder.itemView.setOnTouchListener(new CustomLongClickListener(v -> {
+            onFolderLongClickListener.onFolderLongClick(folderName, position);
+            return true;
+        }));
     }
 
     @Override
@@ -46,6 +52,10 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.ViewHolder
 
     public interface OnFolderClickListener {
         void onFolderClick(String folderName);
+    }
+
+    public interface OnFolderLongClickListener {
+        void onFolderLongClick(String folderName, int position);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

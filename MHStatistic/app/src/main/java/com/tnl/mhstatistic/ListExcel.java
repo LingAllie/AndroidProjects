@@ -1,6 +1,7 @@
 package com.tnl.mhstatistic;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -40,9 +41,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
-public class ListExcel extends Fragment {
+public class ListExcel extends Fragment implements FileAdapter.OnFileLongClickListener{
 
     private static final int PICK_FILE_REQUEST_CODE = 1;
     private static final int STORAGE_PERMISSION_CODE = 100;
@@ -70,13 +72,15 @@ public class ListExcel extends Fragment {
             viewModel.setSelectedFolder(folderName);
         }
 
-        adapter = new FileAdapter();
+        adapter = new FileAdapter(this::onFileLongClick);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         recyclerView.setAdapter(adapter);
 
-        viewModel.getFileList().observe(getViewLifecycleOwner(), fileList -> {
-            // Update the adapter with the file list from the ViewModel
-            adapter.updateFileList(fileList);
+        viewModel.getFolderFilesMap().observe(getViewLifecycleOwner(), folderFilesMap -> {
+            List<FileRecord> files = folderFilesMap.get(folderName);
+            if (files != null) {
+                adapter.updateFileList(files);
+            }
         });
 
         floatBtnFile.setOnClickListener(v -> {
@@ -163,9 +167,18 @@ public class ListExcel extends Fragment {
                 try {
                     String fileName = getFileName(uri);
                     String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
-                    FileRecord fileRecord = new FileRecord(fileName, importDate);
-                    viewModel.addFile(fileRecord);  // Add file to ViewModel
+                    FileRecord fileRecord = new FileRecord(fileName, importDate, folderName);
+
+                    // Log for debugging
+                    Log.d(TAG, "Adding file: " + fileRecord.getFileName());
+
+                    // Add file to ViewModel
+                    viewModel.addFile(requireContext(), folderName, fileRecord);
+
+                    // Update adapter
                     adapter.addFileRecord(fileRecord);
+
+                    // Save file to local storage
                     saveFile(uri, fileName);
                 } catch (IOException e) {
                     Toast.makeText(getContext(), "Error reading file", Toast.LENGTH_SHORT).show();
@@ -223,5 +236,20 @@ public class ListExcel extends Fragment {
             i++;
         }
         return file;
+    }
+
+    @Override
+    public void onFileLongClick(FileRecord fileRecord) {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Delete File")
+                .setMessage("Are you sure you want to delete " + fileRecord.getFileName() + "?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    // Handle file deletion
+                    viewModel.removeFile(requireContext(), folderName, fileRecord.getFileName());
+                    adapter.updateFileList(viewModel.getFolderFilesMap().getValue().get(folderName));
+                    Toast.makeText(getContext(), "File deleted", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }

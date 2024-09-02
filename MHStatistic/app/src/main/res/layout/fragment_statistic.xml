@@ -27,14 +27,15 @@
                 android:drawableStart="@drawable/baseline_keyboard_double_arrow_left_24"
                 android:padding="8dp"
                 android:layout_marginEnd="8dp"
-                android:background="@drawable/background_outline"/>
+                android:backgroundTint="#FCF5FD"/>
 
             <!-- Date TextView -->
             <TextView
                 android:id="@+id/txtSelectDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/select_date"
+                android:hint="@string/select_date"
+                android:text=""
                 android:textSize="14sp"
                 android:textColor="@android:color/black"
                 android:background="@drawable/background_outline"
@@ -48,7 +49,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:drawableEnd="@drawable/baseline_keyboard_double_arrow_right_24"
-                android:background="@drawable/background_outline"
+                android:backgroundTint="#FCF5FD"
                 android:padding="8dp"/>
         </LinearLayout>
 

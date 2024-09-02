@@ -17,9 +17,11 @@ import java.util.List;
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
 
     private List<FileRecord> fileRecords;
+    private OnFileLongClickListener onFileLongClickListener;
 
-    public FileAdapter() {
+    public FileAdapter(OnFileLongClickListener onFileLongClickListener) {
         this.fileRecords = new ArrayList<>();
+        this.onFileLongClickListener = onFileLongClickListener;
     }
 
     @NonNull
@@ -34,6 +36,11 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         FileRecord fileRecord = fileRecords.get(position);
         holder.textViewFileName.setText(fileRecord.getFileName());
         holder.textViewImportDate.setText(fileRecord.getImportDate());
+
+        holder.itemView.setOnTouchListener(new CustomLongClickListener(v -> {
+            onFileLongClickListener.onFileLongClick(fileRecord);
+            return true;
+        }));
     }
 
     @Override
@@ -43,14 +50,29 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
 
     @SuppressLint("NotifyDataSetChanged")
     public void updateFileList(List<FileRecord> newFileList) {
-        this.fileRecords = new ArrayList<>(newFileList); // Use a new ArrayList to update the data
+        if (fileRecords == null) {
+            fileRecords = new ArrayList<>();
+        } else {
+            fileRecords.clear();
+        }
+
+        if (newFileList != null) {
+            fileRecords.addAll(newFileList);
+        }
+
         notifyDataSetChanged();
     }
 
     @SuppressLint("NotifyDataSetChanged")
     public void addFileRecord(FileRecord fileRecord) {
-        fileRecords.add(fileRecord);
-        notifyDataSetChanged();
+        // Prevent duplicate addition
+        boolean exists = fileRecords.stream()
+                .anyMatch(existingFile -> existingFile.getFileName().equals(fileRecord.getFileName()));
+
+        if (!exists) {
+            fileRecords.add(fileRecord);
+            notifyDataSetChanged();
+        }
     }
 
     static class FileViewHolder extends RecyclerView.ViewHolder {
@@ -62,6 +84,10 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             textViewFileName = itemView.findViewById(R.id.textViewFileName);
             textViewImportDate = itemView.findViewById(R.id.textViewDate);
         }
+    }
+
+    public interface OnFileLongClickListener {
+        void onFileLongClick(FileRecord fileRecord);
     }
 
 }

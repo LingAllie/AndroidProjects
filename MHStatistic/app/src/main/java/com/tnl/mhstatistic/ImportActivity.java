@@ -35,10 +35,10 @@ public class ImportActivity extends Fragment {
         floatBtnFolder = view.findViewById(R.id.floatBtnFolder);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        viewModel.loadFolders(requireActivity());
+        viewModel.loadFoldersAndFiles(requireActivity());
 
         folderList = new ArrayList<>();
-        folderAdapter = new FolderAdapter(folderList, this::onFolderClick);
+        folderAdapter = new FolderAdapter(folderList, this::onFolderClick, this::onFolderLongClick);
         recyclerViewFolder.setAdapter(folderAdapter);
         recyclerViewFolder.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
@@ -91,5 +91,69 @@ public class ImportActivity extends Fragment {
                 .replace(R.id.frame_layout, listExcelFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    private void onFolderLongClick(String folderName, int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Options");
+
+        builder.setItems(new String[]{"Rename", "Delete"}, (dialog, which) -> {
+            switch (which) {
+                case 0: // Rename
+                    showRenameFolderDialog(folderName, position);
+                    break;
+                case 1: // Delete
+                    showDeleteConfirmationDialog(folderName, position);
+                    break;
+            }
+        });
+
+        builder.create().show();
+    }
+
+    private void showRenameFolderDialog(String oldFolderName, int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Rename Folder");
+
+        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_rename_folder, null);
+        builder.setView(dialogView);
+
+        EditText edtFolderName = dialogView.findViewById(R.id.edtFolderName);
+        edtFolderName.setText(oldFolderName);
+
+        builder.setPositiveButton("Rename", (dialog, which) -> {
+            String newFolderName = edtFolderName.getText().toString().trim();
+            if (!newFolderName.isEmpty()) {
+                renameFolder(oldFolderName, newFolderName, position);
+            } else {
+                Toast.makeText(getContext(), "Folder name cannot be empty", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+
+        builder.create().show();
+    }
+
+    private void showDeleteConfirmationDialog(String folderName, int position) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle("Confirm Deletion");
+        builder.setMessage("Are you sure you want to delete this folder?");
+
+        builder.setPositiveButton("Yes", (dialog, which) -> deleteFolder(folderName, position));
+        builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
+
+        builder.create().show();
+    }
+
+    private void renameFolder(String oldFolderName, String newFolderName, int position) {
+        viewModel.removeFolder(this.requireContext(), oldFolderName);
+        viewModel.addFolder(this.requireContext(), newFolderName);
+        folderAdapter.notifyItemChanged(position); // Notify the adapter that the item has changed
+    }
+
+    private void deleteFolder(String folderName, int position) {
+        viewModel.removeFolder(this.requireContext(), folderName);
+        folderAdapter.notifyItemRemoved(position);
     }
 }
