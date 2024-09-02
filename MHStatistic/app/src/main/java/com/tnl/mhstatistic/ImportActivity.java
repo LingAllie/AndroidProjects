@@ -33,24 +33,36 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 import com.tnl.adapter.FileAdapter;
 import com.tnl.entity.FileRecord;
 import com.tnl.shared.SharedViewModel;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class ImportActivity extends Fragment implements FileAdapter.OnFileLongClickListener{
 
     private static final int PICK_FILE_REQUEST_CODE = 1;
     private static final int STORAGE_PERMISSION_CODE = 100;
     private static final String TAG = "ListExcel";
+    private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#.##");
 
     private RecyclerView recyclerView;
     private FileAdapter adapter;
@@ -58,6 +70,8 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
     private SharedViewModel viewModel;
     private String folderName;
     private LinearLayout btnBack;
+
+    private FirebaseFirestore firestore;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -68,6 +82,8 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         btnBack = rootView.findViewById(R.id.btnBack);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        firestore = FirebaseFirestore.getInstance();
 
         if (getArguments() != null) {
             folderName = getArguments().getString("FOLDER_NAME");
@@ -99,7 +115,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
     }
 
     private void navigateToImportFragment() {
-        // Replace the current fragment with ImportFragment
+        // Replace the current fragment with ManageActivity
         if (getActivity() != null) {
             Fragment importFragment = new ManageActivity();
             FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
@@ -182,6 +198,10 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
                     // Save file to local storage
                     saveFile(uri, fileName);
+
+                    // Process Excel File and save data to Firestore
+                    processExcelFile(uri);
+
                 } catch (IOException e) {
                     Toast.makeText(getContext(), "Error reading file", Toast.LENGTH_SHORT).show();
                 }
@@ -240,18 +260,185 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         return file;
     }
 
+    private void processExcelFile(Uri uri) {
+        try (InputStream inputStream = getContext().getContentResolver().openInputStream(uri)) {
+            Workbook workbook = new XSSFWorkbook(inputStream);
+
+            // Process each sheet
+            for (int sheetIndex = 0; sheetIndex < 12; sheetIndex++) {
+                Sheet sheet = workbook.getSheetAt(sheetIndex);
+
+                if (sheet == null) {
+                    Log.e(TAG, "Sheet is null");
+                    Toast.makeText(getContext(), "Sheet not found", Toast.LENGTH_SHORT).show();
+                    continue;
+                }
+
+                Log.d(TAG, "Processing sheet: " + sheet.getSheetName());
+
+                for (Row row : sheet) {
+                    try {
+                        // Skip header row
+                        if (row.getRowNum() == 0) continue;
+
+                        // Initialize variables with default values
+                        Date excelDate = null;
+                        int room = 0;
+                        int event = 0;
+                        double totalMoney = 0;
+                        double totalKwh = 0;
+                        double fbMoney = 0;
+                        double roomMoney = 0;
+                        double spaMoney = 0;
+                        double adminMoney = 0;
+                        double fbKwh = 0;
+                        double roomKwh = 0;
+                        double spaKwh = 0;
+                        double adminKwh = 0;
+
+                        // Check for null cells and provide default values
+                        if (row.getCell(0) != null) {
+                            excelDate = row.getCell(0).getDateCellValue();
+                        }
+                        if (row.getCell(1) != null) {
+                            room = (int) row.getCell(1).getNumericCellValue();
+                        }
+                        if (row.getCell(2) != null) {
+                            event = (int) row.getCell(2).getNumericCellValue();
+                        }
+                        if (row.getCell(3) != null) {
+                            totalMoney = row.getCell(3).getNumericCellValue();
+                        }
+                        if (row.getCell(4) != null) {
+                            totalKwh = row.getCell(4).getNumericCellValue();
+                        }
+                        if (row.getCell(5) != null) {
+                            fbMoney = row.getCell(5).getNumericCellValue();
+                        }
+                        if (row.getCell(6) != null) {
+                            roomMoney = row.getCell(6).getNumericCellValue();
+                        }
+                        if (row.getCell(7) != null) {
+                            spaMoney = row.getCell(7).getNumericCellValue();
+                        }
+                        if (row.getCell(8) != null) {
+                            adminMoney = row.getCell(8).getNumericCellValue();
+                        }
+                        if (row.getCell(9) != null) {
+                            fbKwh = row.getCell(9).getNumericCellValue();
+                        }
+                        if (row.getCell(10) != null) {
+                            roomKwh = row.getCell(10).getNumericCellValue();
+                        }
+                        if (row.getCell(11) != null) {
+                            spaKwh = row.getCell(11).getNumericCellValue();
+                        }
+                        if (row.getCell(12) != null) {
+                            adminKwh = row.getCell(12).getNumericCellValue();
+                        }
+
+                        // Format the double values to 2 decimal places
+                        totalMoney = Double.parseDouble(DECIMAL_FORMAT.format(totalMoney));
+                        totalKwh = Double.parseDouble(DECIMAL_FORMAT.format(totalKwh));
+                        fbMoney = Double.parseDouble(DECIMAL_FORMAT.format(fbMoney));
+                        roomMoney = Double.parseDouble(DECIMAL_FORMAT.format(roomMoney));
+                        spaMoney = Double.parseDouble(DECIMAL_FORMAT.format(spaMoney));
+                        adminMoney = Double.parseDouble(DECIMAL_FORMAT.format(adminMoney));
+                        fbKwh = Double.parseDouble(DECIMAL_FORMAT.format(fbKwh));
+                        roomKwh = Double.parseDouble(DECIMAL_FORMAT.format(roomKwh));
+                        spaKwh = Double.parseDouble(DECIMAL_FORMAT.format(spaKwh));
+                        adminKwh = Double.parseDouble(DECIMAL_FORMAT.format(adminKwh));
+
+                        // Convert the date to year/month/day
+                        Calendar calendar = Calendar.getInstance();
+                        if (excelDate != null) {
+                            calendar.setTime(excelDate);
+                        }
+                        String year = folderName; // Use folderName as the year
+                        String month = new SimpleDateFormat("MMM", Locale.getDefault()).format(calendar.getTime());
+                        String day = excelDate != null ? String.valueOf(calendar.get(Calendar.DAY_OF_MONTH)) : "Unknown";
+
+                        // Log the extracted values for debugging
+                        Log.d(TAG, String.format("Row %d: Date: %s, Room: %d, Event: %d, TotalMoney: %.2f, TotalKwh: %.2f, F&B Money: %.2f, Room Money: %.2f, Spa Money: %.2f, Admin Money: %.2f, F&B kWh: %.2f, Room kWh: %.2f, Spa kWh: %.2f, Admin kWh: %.2f",
+                                row.getRowNum(), excelDate != null ? new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(excelDate) : "Unknown",
+                                room, event, totalMoney, totalKwh, fbMoney, roomMoney, spaMoney, adminMoney, fbKwh, roomKwh, spaKwh, adminKwh));
+
+                        // Save to Firestore
+                        saveDataToFirestore(year, month, day, room, event, totalMoney, totalKwh,
+                                fbMoney, roomMoney, spaMoney, adminMoney,
+                                fbKwh, roomKwh, spaKwh, adminKwh);
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error processing row " + row.getRowNum() + ": " + e.getMessage(), e);
+                    }
+                }
+            }
+
+            workbook.close();
+            Toast.makeText(getContext(), "Excel data processed and saved", Toast.LENGTH_SHORT).show();
+
+        } catch (IOException e) {
+            Log.e(TAG, "Error opening input stream: " + e.getMessage(), e);
+            Toast.makeText(getContext(), "Error processing Excel file", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error: " + e.getMessage(), e);
+            Toast.makeText(getContext(), "Error processing Excel file", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private void saveDataToFirestore(String year, String month, String day, int room, int event,
+                                     double totalMoney, double totalKwh, double fbMoney, double roomMoney,
+                                     double spaMoney, double adminMoney, double fbKwh, double roomKwh,
+                                     double spaKwh, double adminKwh) {
+        // Implement the Firestore save logic here
+        // Example Firestore save operation
+        Map<String, Object> data = new HashMap<>();
+        data.put("Room", room);
+        data.put("Event", event);
+        data.put("TotalElectricBill", totalMoney);
+        data.put("TotalElectricUse", totalKwh);
+        data.put("F&BFee", fbMoney);
+        data.put("RoomFee", roomMoney);
+        data.put("SpaFee", spaMoney);
+        data.put("AdminPublicFee", adminMoney);
+        data.put("F&Bkwh", fbKwh);
+        data.put("Roomkwh", roomKwh);
+        data.put("Spakwh", spaKwh);
+        data.put("AdminPublickwh", adminKwh);
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("MHElectric").document(year)
+                .collection(month).document(day)
+                .set(data)
+                .addOnSuccessListener(aVoid -> Log.d("Firestore", "Data successfully written!"))
+                .addOnFailureListener(e -> Log.w("Firestore", "Error writing document", e));
+    }
+
+
     @Override
-    public void onFileLongClick(FileRecord fileRecord) {
+    public void onFileLongClick(FileRecord file) {
         new AlertDialog.Builder(getContext())
                 .setTitle("Delete File")
-                .setMessage("Are you sure you want to delete " + fileRecord.getFileName() + "?")
+                .setMessage("Are you sure you want to delete " + file.getFileName() + "?")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     // Handle file deletion
-                    viewModel.removeFile(requireContext(), folderName, fileRecord.getFileName());
+                    viewModel.removeFile(requireContext(), folderName, file.getFileName());
                     adapter.updateFileList(viewModel.getFolderFilesMap().getValue().get(folderName));
                     Toast.makeText(getContext(), "File deleted", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                openFilePicker();
+            } else {
+                Toast.makeText(getContext(), "Storage permission is required to import files", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }
