@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "607518455866",
+    "project_id": "mhstatistic",
+    "storage_bucket": "mhstatistic.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:607518455866:android:b24830503a0df8f0cc5d03",
+        "android_client_info": {
+          "package_name": "com.tnl.statistic"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaPYYc_O8bjGIguh8rg_4QY1sd2eiv9B4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

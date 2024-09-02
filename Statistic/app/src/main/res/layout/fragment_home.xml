@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp"
+    tools:context=".ui.home.HomeFragment">
+
+    <!-- Date Selector Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_horizontal">
+
+        <!-- Previous Button -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnPrevDate"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:drawableStart="@drawable/baseline_keyboard_double_arrow_left_24"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/button_background"/>
+
+        <!-- Date TextView -->
+        <TextView
+            android:id="@+id/txtSelectDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Date"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:background="@drawable/button_background"
+            android:padding="12dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center"/>
+
+        <!-- Next Button -->
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnNextDate"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:drawableRight="@drawable/baseline_keyboard_double_arrow_right_24"
+            android:background="@drawable/button_background"
+            android:padding="8dp"/>
+    </LinearLayout>
+
+    <com.github.mikephil.charting.charts.CombinedChart
+        android:id="@+id/combinedChart"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2"
+        android:layout_marginBottom="20dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Row 1: Room and Total kWh -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:id="@+id/txtRoomLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Room"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:gravity="center_horizontal" />
+
+                    <TextView
+                        android:id="@+id/txtRoomData"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:padding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:id="@+id/txtTotalKWhLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Amount Of Electricity"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:gravity="center_horizontal" />
+
+                    <TextView
+                        android:id="@+id/txtTotalKWh"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 kWh"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:padding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Row 2: Event and Total Money -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:id="@+id/txtEventLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Event"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:gravity="center_horizontal" />
+
+                    <TextView
+                        android:id="@+id/txtEventData"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:padding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:padding="8dp"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:id="@+id/txtTotalMoneyLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Electricity Bill"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:gravity="center_horizontal" />
+
+                    <TextView
+                        android:id="@+id/txtTotalMoney"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 VND"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/black"
+                        android:padding="8dp"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal" />
+                </LinearLayout>
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
