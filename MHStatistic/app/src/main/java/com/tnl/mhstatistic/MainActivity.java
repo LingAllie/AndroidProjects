@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
             if (itemId == R.id.statistic) {
                 replaceFragment(new StatisticActivity());
             } else if (itemId == R.id.imp) {
-                replaceFragment(new ImportActivity());
+                replaceFragment(new ManageActivity());
             } else {
                 return false;
             }

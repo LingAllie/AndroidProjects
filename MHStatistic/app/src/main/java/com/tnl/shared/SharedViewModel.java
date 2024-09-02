@@ -1,4 +1,4 @@
-package com.tnl.mhstatistic;
+package com.tnl.shared;
 
 import android.content.Context;
 import android.util.Log;

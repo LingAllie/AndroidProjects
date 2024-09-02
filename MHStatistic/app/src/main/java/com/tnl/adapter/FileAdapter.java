@@ -1,4 +1,4 @@
-package com.tnl.mhstatistic;
+package com.tnl.adapter;
 
 import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
@@ -10,6 +10,8 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.tnl.entity.FileRecord;
+import com.tnl.mhstatistic.R;
+import com.tnl.shared.CustomLongClickListener;
 
 import java.util.ArrayList;
 import java.util.List;
