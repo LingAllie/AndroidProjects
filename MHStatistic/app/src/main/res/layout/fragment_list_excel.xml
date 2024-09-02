@@ -25,6 +25,16 @@
 
     </LinearLayout>
 
+    <!-- Sorting options Spinner -->
+    <Spinner
+        android:id="@+id/spinnerSortOptions"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="10dp"
+        android:layout_below="@+id/btnBack"
+        android:entries="@array/sort_options"/>
+
     <!-- ListView to display imported files -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewFile"
@@ -34,7 +44,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="20dp"
-        android:layout_below="@+id/btnBack"/>
+        android:layout_below="@+id/spinnerSortOptions"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatBtnFile"
@@ -42,7 +52,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:src="@drawable/baseline_file_upload_24"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/colorRoom"
         android:contentDescription="Upload excel file"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"/>

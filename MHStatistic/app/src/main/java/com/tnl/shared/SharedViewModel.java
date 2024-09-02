@@ -131,4 +131,22 @@ public class SharedViewModel extends ViewModel {
         }
     }
 
+    public void updateFile(String folderName, FileRecord updatedFile) {
+        Map<String, List<FileRecord>> folderFiles = folderFilesMap.getValue();
+        if (folderFiles != null) {
+            List<FileRecord> files = folderFiles.get(folderName);
+            if (files != null) {
+                for (int i = 0; i < files.size(); i++) {
+                    FileRecord file = files.get(i);
+                    if (file.getFileName().equals(updatedFile.getFileName())) {
+                        files.set(i, updatedFile);
+                        break;
+                    }
+                }
+                folderFiles.put(folderName, files);
+                folderFilesMap.setValue(folderFiles);
+            }
+        }
+    }
+
 }

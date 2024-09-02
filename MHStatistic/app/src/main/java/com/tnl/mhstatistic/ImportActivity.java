@@ -15,7 +15,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResult;
@@ -30,6 +32,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -51,6 +54,7 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -70,6 +74,8 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
     private SharedViewModel viewModel;
     private String folderName;
     private LinearLayout btnBack;
+    private Spinner spinnerSortOptions;
+    private List<FileRecord> fileList;
 
     private FirebaseFirestore firestore;
 
@@ -80,6 +86,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         recyclerView = rootView.findViewById(R.id.recyclerViewFile);
         floatBtnFile = rootView.findViewById(R.id.floatBtnFile);
         btnBack = rootView.findViewById(R.id.btnBack);
+        spinnerSortOptions = rootView.findViewById(R.id.spinnerSortOptions);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
@@ -91,13 +98,14 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         }
 
         adapter = new FileAdapter(this::onFileLongClick);
-        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+//        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
         viewModel.getFolderFilesMap().observe(getViewLifecycleOwner(), folderFilesMap -> {
-            List<FileRecord> files = folderFilesMap.get(folderName);
-            if (files != null) {
-                adapter.updateFileList(files);
+            fileList = folderFilesMap.get(folderName);
+            if (fileList != null) {
+                adapter.updateFileList(fileList);
             }
         });
 
@@ -111,7 +119,31 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
         btnBack.setOnClickListener(v -> navigateToImportFragment());
 
+        spinnerSortOptions.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                sortFileList();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Do nothing
+            }
+        });
+
         return rootView;
+    }
+
+    private void sortFileList() {
+        if (fileList == null) return;
+
+        String selectedOption = (String) spinnerSortOptions.getSelectedItem();
+        if ("Sort by Name".equals(selectedOption)) {
+            fileList.sort((f1, f2) -> f1.getFileName().compareToIgnoreCase(f2.getFileName()));
+        } else if ("Sort by Date Added".equals(selectedOption)) {
+            fileList.sort(Comparator.comparing(FileRecord::getImportDate));
+        }
+        adapter.updateFileList(fileList);
     }
 
     private void navigateToImportFragment() {
@@ -229,9 +261,18 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             File externalStorageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
             if (externalStorageDir != null) {
                 File file = new File(externalStorageDir, fileName);
+
+                // Check if the file already exists and delete it
                 if (file.exists()) {
-                    file = renameFile(file);
+                    boolean deleted = file.delete();
+                    if (deleted) {
+                        Log.d(TAG, "Existing file deleted: " + file.getName());
+                    } else {
+                        Log.e(TAG, "Failed to delete existing file: " + file.getName());
+                    }
                 }
+
+                // Save the new file
                 try (FileOutputStream outputStream = new FileOutputStream(file)) {
                     byte[] buffer = new byte[1024];
                     int length;
@@ -247,6 +288,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             throw new IOException("Error opening file input stream");
         }
     }
+
 
     private File renameFile(File file) {
         String fileName = file.getName();
@@ -265,7 +307,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             Workbook workbook = new XSSFWorkbook(inputStream);
 
             // Process each sheet
-            for (int sheetIndex = 0; sheetIndex < 12; sheetIndex++) {
+            for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
                 Sheet sheet = workbook.getSheetAt(sheetIndex);
 
                 if (sheet == null) {
@@ -363,6 +405,20 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                                 row.getRowNum(), excelDate != null ? new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(excelDate) : "Unknown",
                                 room, event, totalMoney, totalKwh, fbMoney, roomMoney, spaMoney, adminMoney, fbKwh, roomKwh, spaKwh, adminKwh));
 
+                        // Check if file already exists
+                        List<FileRecord> files = viewModel.getFolderFilesMap().getValue().get(folderName);
+                        if (files != null) {
+                            for (FileRecord fileRecord : files) {
+                                if (fileRecord.getFileName().equals(getFileName(uri))) {
+                                    // Update existing file record's date
+                                    fileRecord.setImportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
+                                    viewModel.updateFile(folderName, fileRecord);
+                                    adapter.notifyDataSetChanged();
+                                    break;
+                                }
+                            }
+                        }
+
                         // Save to Firestore
                         saveDataToFirestore(year, month, day, room, event, totalMoney, totalKwh,
                                 fbMoney, roomMoney, spaMoney, adminMoney,
@@ -385,6 +441,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             Toast.makeText(getContext(), "Error processing Excel file", Toast.LENGTH_SHORT).show();
         }
     }
+
 
 
     private void saveDataToFirestore(String year, String month, String day, int room, int event,

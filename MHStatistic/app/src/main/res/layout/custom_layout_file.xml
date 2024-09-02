@@ -4,7 +4,6 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     app:cardBackgroundColor="#185B37"
-    app:cardCornerRadius="40dp"
     android:layout_margin="5dp">
 
     <LinearLayout
@@ -15,11 +14,6 @@
         android:background="@color/white"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="match_parent"/>
 
         <ImageView
             android:layout_width="0dp"

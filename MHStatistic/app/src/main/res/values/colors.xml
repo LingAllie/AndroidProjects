@@ -9,4 +9,13 @@
     <color name="white">#FFFFFFFF</color>
     <color name="yellow">#FFEB3B</color>
     <color name="gray_light">#C7C9CF</color>
+
+    <color name="colorFandB">#F2825E</color> <!-- Example color for F&B -->
+    <color name="colorRoom">#69F06E</color>   <!-- Example color for Room -->
+    <color name="colorSpa">#49A7F2</color>    <!-- Example color for Spa -->
+    <color name="colorAdminPublic">#E4C055</color> <!-- Example color for Admin-Public -->
+    <color name="colorLine">#E91E63</color>   <!-- Example color for Line chart -->
+    <color name="colorTextBar">#000000</color>   <!-- Example color for text -->
+    <color name="colorTextLine">#00BCD4</color>
 </resources>
+

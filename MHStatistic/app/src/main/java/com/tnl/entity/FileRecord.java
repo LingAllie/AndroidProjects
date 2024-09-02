@@ -23,4 +23,16 @@ public class FileRecord {
     public String getFolderName() {
         return folderName; // Getter for folder name
     }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public void setImportDate(String importDate) {
+        this.importDate = importDate;
+    }
+
+    public void setFolderName(String folderName) {
+        this.folderName = folderName;
+    }
 }

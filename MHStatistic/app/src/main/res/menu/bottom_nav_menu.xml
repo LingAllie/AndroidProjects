@@ -8,8 +8,8 @@
         />
     <item
         android:id="@+id/imp"
-        android:title="@string/imp"
-        android:icon="@drawable/baseline_import_export_24"
+        android:title="@string/fold"
+        android:icon="@drawable/baseline_folder_24"
         />
 
 </menu>
