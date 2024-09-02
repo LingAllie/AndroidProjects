@@ -27,10 +27,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.tnl.entity.FileRecord;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,6 +51,7 @@ public class ListExcel extends Fragment {
     private RecyclerView recyclerView;
     private FileAdapter adapter;
     private FloatingActionButton floatBtnFile;
+    private SharedViewModel viewModel;
     private String folderName;
     private LinearLayout btnBack;
 
@@ -60,13 +63,21 @@ public class ListExcel extends Fragment {
         floatBtnFile = rootView.findViewById(R.id.floatBtnFile);
         btnBack = rootView.findViewById(R.id.btnBack);
 
+        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
         if (getArguments() != null) {
             folderName = getArguments().getString("FOLDER_NAME");
+            viewModel.setSelectedFolder(folderName);
         }
 
         adapter = new FileAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         recyclerView.setAdapter(adapter);
+
+        viewModel.getFileList().observe(getViewLifecycleOwner(), fileList -> {
+            // Update the adapter with the file list from the ViewModel
+            adapter.updateFileList(fileList);
+        });
 
         floatBtnFile.setOnClickListener(v -> {
             if (checkStoragePermission()) {
@@ -86,7 +97,7 @@ public class ListExcel extends Fragment {
         if (getActivity() != null) {
             Fragment importFragment = new ImportActivity();
             FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.frame_layout, importFragment); // Update R.id.fragment_container with your actual container ID
+            transaction.replace(R.id.frame_layout, importFragment); // Update R.id.frame_layout with your actual container ID
             transaction.addToBackStack(null); // Add to back stack to enable back navigation
             transaction.commit();
         }
@@ -152,7 +163,9 @@ public class ListExcel extends Fragment {
                 try {
                     String fileName = getFileName(uri);
                     String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
-                    adapter.addFileRecord(fileName, importDate);
+                    FileRecord fileRecord = new FileRecord(fileName, importDate);
+                    viewModel.addFile(fileRecord);  // Add file to ViewModel
+                    adapter.addFileRecord(fileRecord);
                     saveFile(uri, fileName);
                 } catch (IOException e) {
                     Toast.makeText(getContext(), "Error reading file", Toast.LENGTH_SHORT).show();

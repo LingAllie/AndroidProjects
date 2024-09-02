@@ -1,5 +1,6 @@
 package com.tnl.mhstatistic;
 
+import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,12 +9,14 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.tnl.entity.FileRecord;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
 
-    private final List<FileRecord> fileRecords;
+    private List<FileRecord> fileRecords;
 
     public FileAdapter() {
         this.fileRecords = new ArrayList<>();
@@ -38,8 +41,15 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         return fileRecords.size();
     }
 
-    public void addFileRecord(String fileName, String importDate) {
-        fileRecords.add(new FileRecord(fileName, importDate));
+    @SuppressLint("NotifyDataSetChanged")
+    public void updateFileList(List<FileRecord> newFileList) {
+        this.fileRecords = new ArrayList<>(newFileList); // Use a new ArrayList to update the data
+        notifyDataSetChanged();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    public void addFileRecord(FileRecord fileRecord) {
+        fileRecords.add(fileRecord);
         notifyDataSetChanged();
     }
 
@@ -54,21 +64,4 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         }
     }
 
-    static class FileRecord {
-        private final String fileName;
-        private final String importDate;
-
-        FileRecord(String fileName, String importDate) {
-            this.fileName = fileName;
-            this.importDate = importDate;
-        }
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public String getImportDate() {
-            return importDate;
-        }
-    }
 }

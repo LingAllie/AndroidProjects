@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,6 +25,7 @@ public class ImportActivity extends Fragment {
     private FloatingActionButton floatBtnFolder;
     private List<String> folderList;
     private FolderAdapter folderAdapter;
+    private SharedViewModel viewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -32,10 +34,17 @@ public class ImportActivity extends Fragment {
         recyclerViewFolder = view.findViewById(R.id.recyclerViewFolder);
         floatBtnFolder = view.findViewById(R.id.floatBtnFolder);
 
+        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        viewModel.loadFolders(requireActivity());
+
         folderList = new ArrayList<>();
         folderAdapter = new FolderAdapter(folderList, this::onFolderClick);
         recyclerViewFolder.setAdapter(folderAdapter);
-        recyclerViewFolder.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        recyclerViewFolder.setLayoutManager(new GridLayoutManager(getContext(), 4));
+
+        viewModel.getFolderList().observe(getViewLifecycleOwner(), folderList -> {
+            folderAdapter.updateFolders(folderList); // Update the adapter with the new folder list
+        });
 
         floatBtnFolder.setOnClickListener(v -> showCreateFolderDialog());
 
@@ -66,9 +75,10 @@ public class ImportActivity extends Fragment {
     }
 
     private void createFolder(String folderName) {
-        folderList.add(folderName);
-        folderAdapter.notifyDataSetChanged();
+        viewModel.addFolder(this.requireContext(),folderName); // Add the folder to the ViewModel
+        folderAdapter.notifyDataSetChanged(); // Notify the adapter that the data has changed
     }
+
 
     private void onFolderClick(String folderName) {
         // Navigate to ListExcelFragment with the selected folder name

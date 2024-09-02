@@ -39,6 +39,11 @@ public class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.ViewHolder
         return folderList.size();
     }
 
+    public void updateFolders(List<String> newFolderList) {
+        this.folderList = newFolderList;
+        notifyDataSetChanged();
+    }
+
     public interface OnFolderClickListener {
         void onFolderClick(String folderName);
     }
