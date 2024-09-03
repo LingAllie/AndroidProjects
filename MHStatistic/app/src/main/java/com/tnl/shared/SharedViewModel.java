@@ -1,12 +1,14 @@
 package com.tnl.shared;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.tnl.entity.FileRecord;
 
@@ -18,19 +20,31 @@ import java.util.Map;
 
 public class SharedViewModel extends ViewModel {
 
+    private static final String TAG = "SharedViewModel";
     private final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
     private final MutableLiveData<List<String>> folderList = new MutableLiveData<>(new ArrayList<>());
+    private final MutableLiveData<List<FileRecord>> fileRecords = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Map<String, List<FileRecord>>> folderFilesMap = new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<String> selectedFolder = new MutableLiveData<>();
     private final MutableLiveData<Date> selectedDate = new MutableLiveData<>();
-    private final String TAG = "SVM";
 
+    public SharedViewModel() {
+        // Initialize selectedDate with the current date if not set
+        if (selectedDate.getValue() == null) {
+            selectedDate.setValue(new Date());
+        }
+    }
+
+    public LiveData<List<FileRecord>> getFileRecords() {
+        return fileRecords;
+    }
 
     public LiveData<Date> getSelectedDate() {
         return selectedDate;
     }
 
     public void setSelectedDate(Date date) {
+        Log.d(TAG, "Setting selected date: " + date);
         selectedDate.setValue(date);
     }
 
@@ -51,26 +65,28 @@ public class SharedViewModel extends ViewModel {
         if (folders == null) {
             folders = new ArrayList<>();
         }
-        folders.add(folderName);
-        folderList.setValue(folders);
+        if (!folders.contains(folderName)) {
+            folders.add(folderName);
+            folderList.setValue(folders);
 
-        // Initialize folder files map
-        Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
-        if (filesMap == null) {
-            filesMap = new HashMap<>();
+            // Initialize folder files map
+            Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
+            if (filesMap == null) {
+                filesMap = new HashMap<>();
+            }
+            filesMap.put(folderName, new ArrayList<>());
+            folderFilesMap.setValue(filesMap);
+
+            // Save to SharedPreferences
+            SharedPreferencesHelper.saveFoldersToPreferences(context, folders);
+            SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
+
+            // Save to Firestore
+            firestore.collection("MHElectric").document(folderName)
+                    .set(new HashMap<>())
+                    .addOnSuccessListener(aVoid -> Log.d(TAG, "Folder added to Firestore"))
+                    .addOnFailureListener(e -> Log.e(TAG, "Error adding folder to Firestore", e));
         }
-        filesMap.put(folderName, new ArrayList<>());
-        folderFilesMap.setValue(filesMap);
-
-        // Save to SharedPreferences
-        SharedPreferencesHelper.saveFoldersToPreferences(context, folders);
-        SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
-
-        // Save to Firestore
-        firestore.collection("MHElectric").document(folderName)
-                .set(new HashMap<>())
-                .addOnSuccessListener(aVoid -> Log.d(TAG, "Folder added to Firestore"))
-                .addOnFailureListener(e -> Log.e(TAG, "Error adding folder to Firestore", e));
     }
 
     public void removeFolder(Context context, String folderName) {
@@ -98,7 +114,6 @@ public class SharedViewModel extends ViewModel {
         }
     }
 
-
     public void addFile(Context context, String folderName, FileRecord fileRecord) {
         Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
         if (filesMap == null) {
@@ -116,12 +131,12 @@ public class SharedViewModel extends ViewModel {
                 .anyMatch(existingFile -> existingFile.getFileName().equals(fileRecord.getFileName()));
 
         if (!exists) {
+            fileRecord.setFolderName(folderName);  // Ensure folder name is set
             files.add(fileRecord);
             folderFilesMap.setValue(filesMap);
             SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
         }
     }
-
 
     public void removeFile(Context context, String folderName, String fileName) {
         Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
@@ -139,22 +154,63 @@ public class SharedViewModel extends ViewModel {
         selectedFolder.setValue(folderName);
     }
 
-    public void loadFoldersAndFiles(Context context) {
-        List<String> folders = SharedPreferencesHelper.loadFoldersFromPreferences(context);
-        Map<String, List<FileRecord>> filesMap = SharedPreferencesHelper.loadFolderFilesFromPreferences(context);
+    public void loadFolders() {
+        // Load folders from Firestore
+        firestore.collection("MHElectric")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<String> folders = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String folderName = document.getId();
+                            folders.add(folderName);
 
-        Log.d(TAG, "Loaded folders: " + folders);
-        Log.d(TAG, "Loaded file records: " + filesMap);
+                            // Assuming file records are stored as a subcollection in each folder
+                            firestore.collection("MHElectric").document(folderName)
+                                    .get()
+                                    .addOnCompleteListener(fileTask -> {
+                                        if (fileTask.isSuccessful()) {
+                                            // Set the data to LiveData after processing all folders
+                                            folderList.setValue(folders);
+                                        } else {
+                                            Log.e(TAG, "Error getting files", fileTask.getException());
+                                        }
+                                    });
+                        }
 
-        if (folders != null) {
-            folderList.setValue(folders);
-        }
+                    } else {
+                        Log.e(TAG, "Error getting folders", task.getException());
+                        // Set empty values in case of an error
+                        folderList.setValue(new ArrayList<>());
+                    }
+                });
+    }
 
-        if (filesMap != null) {
-            folderFilesMap.setValue(filesMap);
-        } else {
-            folderFilesMap.setValue(new HashMap<>());
-        }
+    public void loadFiles() {
+        firestore.collection("Files")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<FileRecord> fileRecordsList = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            String fileName = document.getString("fileName");
+                            String folderName = document.getString("folderName");
+                            String importDate = document.getString("importDate");
+                            String url = document.getString("url");
+
+                            // Log the details of each fileRecord
+                            Log.d(TAG, "FileRecord - Name: " + fileName + ", Folder: " + folderName + ", Date: " + importDate + ", URL: " + url);
+
+                            FileRecord fileRecord = new FileRecord(fileName, folderName, importDate, url);
+                            fileRecordsList.add(fileRecord);
+                        }
+
+                        fileRecords.setValue(fileRecordsList);
+                    } else {
+                        Log.e(TAG, "Error getting files", task.getException());
+                        fileRecords.setValue(new ArrayList<>()); // Set empty list on error
+                    }
+                });
     }
 
     public void updateFile(String folderName, FileRecord updatedFile) {
@@ -174,5 +230,4 @@ public class SharedViewModel extends ViewModel {
             }
         }
     }
-
 }

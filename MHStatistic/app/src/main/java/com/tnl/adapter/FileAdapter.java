@@ -13,7 +13,6 @@ import com.tnl.entity.FileRecord;
 import com.tnl.mhstatistic.R;
 import com.tnl.shared.CustomLongClickListener;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
@@ -21,8 +20,8 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     private List<FileRecord> fileRecords;
     private OnFileLongClickListener onFileLongClickListener;
 
-    public FileAdapter(OnFileLongClickListener onFileLongClickListener) {
-        this.fileRecords = new ArrayList<>();
+    public FileAdapter(List<FileRecord> fileRecords, OnFileLongClickListener onFileLongClickListener) {
+        this.fileRecords = fileRecords;
         this.onFileLongClickListener = onFileLongClickListener;
     }
 
@@ -37,7 +36,7 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     public void onBindViewHolder(@NonNull FileViewHolder holder, int position) {
         FileRecord fileRecord = fileRecords.get(position);
         holder.textViewFileName.setText(fileRecord.getFileName());
-        holder.textViewImportDate.setText(fileRecord.getImportDate());
+        holder.textViewImportDate.setText(fileRecord.getFolderName());
 
         holder.itemView.setOnTouchListener(new CustomLongClickListener(v -> {
             onFileLongClickListener.onFileLongClick(fileRecord);
@@ -51,17 +50,9 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    public void updateFileList(List<FileRecord> newFileList) {
-        if (fileRecords == null) {
-            fileRecords = new ArrayList<>();
-        } else {
-            fileRecords.clear();
-        }
-
-        if (newFileList != null) {
-            fileRecords.addAll(newFileList);
-        }
-
+    public void updateFileList(List<FileRecord> newFiles) {
+        this.fileRecords.clear();
+        this.fileRecords.addAll(newFiles);
         notifyDataSetChanged();
     }
 
@@ -77,7 +68,8 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         }
     }
 
-    static class FileViewHolder extends RecyclerView.ViewHolder {
+    // Change visibility to public
+    public static class FileViewHolder extends RecyclerView.ViewHolder {
         TextView textViewFileName;
         TextView textViewImportDate;
 

@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.tnl.adapter.FolderAdapter;
 import com.tnl.shared.SharedViewModel;
 
@@ -37,7 +40,7 @@ public class ManageActivity extends Fragment {
         floatBtnFolder = view.findViewById(R.id.floatBtnFolder);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        viewModel.loadFoldersAndFiles(requireActivity());
+        viewModel.loadFolders();
 
         folderList = new ArrayList<>();
         folderAdapter = new FolderAdapter(folderList, this::onFolderClick, this::onFolderLongClick);
@@ -45,7 +48,7 @@ public class ManageActivity extends Fragment {
         recyclerViewFolder.setLayoutManager(new GridLayoutManager(getContext(), 4));
 
         viewModel.getFolderList().observe(getViewLifecycleOwner(), folderList -> {
-            folderAdapter.updateFolders(folderList); // Update the adapter with the new folder list
+            folderAdapter.updateFolders(folderList);
         });
 
         floatBtnFolder.setOnClickListener(v -> showCreateFolderDialog());
@@ -77,8 +80,11 @@ public class ManageActivity extends Fragment {
     }
 
     private void createFolder(String folderName) {
-        viewModel.addFolder(this.requireContext(),folderName); // Add the folder to the ViewModel
-        folderAdapter.notifyDataSetChanged(); // Notify the adapter that the data has changed
+        // 1. Create the folder in Firestore
+        viewModel.addFolder(this.requireContext(), folderName);
+
+        // Notify the adapter that the data has changed
+        folderAdapter.notifyDataSetChanged();
     }
 
 

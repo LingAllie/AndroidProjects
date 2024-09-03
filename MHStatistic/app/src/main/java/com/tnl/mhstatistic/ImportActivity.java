@@ -38,6 +38,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.tnl.adapter.FileAdapter;
 import com.tnl.entity.FileRecord;
 import com.tnl.shared.SharedViewModel;
@@ -52,7 +55,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -97,18 +102,49 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             viewModel.setSelectedFolder(folderName);
         }
 
-        adapter = new FileAdapter(this::onFileLongClick);
-//        recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        setupRecyclerView();
+        setupFabButton();
+        setupBackButton();
+        setupSortSpinner();
+
+        return rootView;
+    }
+
+    private void setupRecyclerView() {
+        adapter = new FileAdapter(new ArrayList<>(), this);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        viewModel.getFolderFilesMap().observe(getViewLifecycleOwner(), folderFilesMap -> {
-            fileList = folderFilesMap.get(folderName);
-            if (fileList != null) {
-                adapter.updateFileList(fileList);
+        viewModel.loadFiles();
+        viewModel.getSelectedFolder().observe(getViewLifecycleOwner(), selectedFolder -> {
+            Log.d(TAG, "Selected Folder: " + selectedFolder);
+
+            if (selectedFolder != null) {
+                viewModel.getFileRecords().observe(getViewLifecycleOwner(), fileRecords -> {
+                    if (fileRecords != null) {
+                        Log.d(TAG, "File Records Count: " + fileRecords.size());
+
+                        List<FileRecord> filteredFiles = new ArrayList<>();
+                        for (FileRecord file : fileRecords) {
+                            String folderYear = file.getImportDate();
+                            if (folderYear.equals(selectedFolder)) {
+                                filteredFiles.add(file);
+                            }
+                        }
+                        Log.d(TAG, "Filtered files: " + filteredFiles.size());
+                        adapter.updateFileList(filteredFiles);
+                    }
+                });
             }
         });
 
+        // Load files if not already loaded
+        if (viewModel.getFileRecords().getValue() == null || viewModel.getFileRecords().getValue().isEmpty()) {
+            viewModel.loadFiles();
+        }
+    }
+
+    private void setupFabButton() {
         floatBtnFile.setOnClickListener(v -> {
             if (checkStoragePermission()) {
                 openFilePicker();
@@ -116,9 +152,13 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                 requestStoragePermission();
             }
         });
+    }
 
+    private void setupBackButton() {
         btnBack.setOnClickListener(v -> navigateToImportFragment());
+    }
 
+    private void setupSortSpinner() {
         spinnerSortOptions.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -130,8 +170,6 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                 // Do nothing
             }
         });
-
-        return rootView;
     }
 
     private void sortFileList() {
@@ -215,19 +253,20 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                 if (fileName.endsWith(".xlsx")) {
                     try {
                         String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
-                        FileRecord fileRecord = new FileRecord(fileName, importDate, folderName);
+                        FileRecord fileRecord = new FileRecord(fileName, importDate, folderName, "");
 
                         // Log for debugging
                         Log.d(TAG, "Adding file: " + fileRecord.getFileName());
 
                         // Add file to ViewModel
+                        Log.d(TAG, "onActive: folder name: " + folderName);
                         viewModel.addFile(requireContext(), folderName, fileRecord);
 
                         // Update adapter
                         adapter.addFileRecord(fileRecord);
 
                         // Save file to local storage
-                        saveFile(uri, fileName);
+                        saveFile(uri, fileName, fileRecord);
 
                         // Process Excel File and save data to Firestore
                         processExcelFile(uri);
@@ -257,7 +296,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         return "Unknown";
     }
 
-    private void saveFile(Uri uri, String fileName) throws IOException {
+    private void saveFile(Uri uri, String fileName, FileRecord fileRecord) throws IOException {
         InputStream inputStream = getContext().getContentResolver().openInputStream(uri);
         if (inputStream != null) {
             File externalStorageDir = getActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
@@ -284,11 +323,44 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                     inputStream.close();
                     outputStream.flush();
                     Toast.makeText(getContext(), "Please wait..." , Toast.LENGTH_SHORT).show();
+
+                    // Upload to Firebase Storage
+                    uploadFileToFirebase(file, fileName, fileRecord);
                 }
             }
         } else {
             throw new IOException("Error opening file input stream");
         }
+    }
+
+    private void uploadFileToFirebase(File file, String fileName, FileRecord fileRecord) {
+        Uri fileUri = Uri.fromFile(file);
+        FirebaseStorage storage = FirebaseStorage.getInstance();
+        StorageReference storageRef = storage.getReference().child(folderName + "/Files/" + fileName);
+        UploadTask uploadTask = storageRef.putFile(fileUri);
+
+        uploadTask.addOnSuccessListener(taskSnapshot -> {
+            storageRef.getDownloadUrl().addOnSuccessListener(downloadUrl -> {
+                fileRecord.setUrl(downloadUrl.toString());
+                saveFileRecordToFirestore(fileRecord);
+            }).addOnFailureListener(e -> Log.e(TAG, "Failed to get download URL", e));
+        }).addOnFailureListener(e -> Log.e(TAG, "Upload failed", e));
+    }
+
+    private void saveFileRecordToFirestore(FileRecord fileRecord) {
+        Map<String, Object> fileData = new HashMap<>();
+        fileData.put("fileName", fileRecord.getFileName());
+        fileData.put("importDate", fileRecord.getImportDate());
+        fileData.put("folderName", fileRecord.getFolderName());
+        fileData.put("url", fileRecord.getUrl());
+
+        firestore.collection("Files").document(fileRecord.getFileName()).set(fileData, SetOptions.merge())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "FileRecord saved successfully");
+                    viewModel.addFile(requireContext(), folderName, fileRecord);
+                    adapter.addFileRecord(fileRecord);
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Error saving FileRecord", e));
     }
 
 
@@ -314,60 +386,20 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                         if (row.getRowNum() == 0) continue;
 
                         // Initialize variables with default values
-                        Date excelDate = null;
-                        int room = 0;
-                        int event = 0;
-                        double totalMoney = 0;
-                        double totalKwh = 0;
-                        double fbMoney = 0;
-                        double roomMoney = 0;
-                        double spaMoney = 0;
-                        double adminMoney = 0;
-                        double fbKwh = 0;
-                        double roomKwh = 0;
-                        double spaKwh = 0;
-                        double adminKwh = 0;
+                        Date excelDate = row.getCell(0) != null ? row.getCell(0).getDateCellValue() : null;
+                        int room = row.getCell(1) != null ? (int) row.getCell(1).getNumericCellValue() : 0;
+                        int event = row.getCell(2) != null ? (int) row.getCell(2).getNumericCellValue() : 0;
+                        double totalMoney = row.getCell(3) != null ? row.getCell(3).getNumericCellValue() : 0;
+                        double totalKwh = row.getCell(4) != null ? row.getCell(4).getNumericCellValue() : 0;
+                        double fbMoney = row.getCell(5) != null ? row.getCell(5).getNumericCellValue() : 0;
+                        double roomMoney = row.getCell(6) != null ? row.getCell(6).getNumericCellValue() : 0;
+                        double spaMoney = row.getCell(7) != null ? row.getCell(7).getNumericCellValue() : 0;
+                        double adminMoney = row.getCell(8) != null ? row.getCell(8).getNumericCellValue() : 0;
+                        double fbKwh = row.getCell(9) != null ? row.getCell(9).getNumericCellValue() : 0;
+                        double roomKwh = row.getCell(10) != null ? row.getCell(10).getNumericCellValue() : 0;
+                        double spaKwh = row.getCell(11) != null ? row.getCell(11).getNumericCellValue() : 0;
+                        double adminKwh = row.getCell(12) != null ? row.getCell(12).getNumericCellValue() : 0;
 
-                        // Check for null cells and provide default values
-                        if (row.getCell(0) != null) {
-                            excelDate = row.getCell(0).getDateCellValue();
-                        }
-                        if (row.getCell(1) != null) {
-                            room = (int) row.getCell(1).getNumericCellValue();
-                        }
-                        if (row.getCell(2) != null) {
-                            event = (int) row.getCell(2).getNumericCellValue();
-                        }
-                        if (row.getCell(3) != null) {
-                            totalMoney = row.getCell(3).getNumericCellValue();
-                        }
-                        if (row.getCell(4) != null) {
-                            totalKwh = row.getCell(4).getNumericCellValue();
-                        }
-                        if (row.getCell(5) != null) {
-                            fbMoney = row.getCell(5).getNumericCellValue();
-                        }
-                        if (row.getCell(6) != null) {
-                            roomMoney = row.getCell(6).getNumericCellValue();
-                        }
-                        if (row.getCell(7) != null) {
-                            spaMoney = row.getCell(7).getNumericCellValue();
-                        }
-                        if (row.getCell(8) != null) {
-                            adminMoney = row.getCell(8).getNumericCellValue();
-                        }
-                        if (row.getCell(9) != null) {
-                            fbKwh = row.getCell(9).getNumericCellValue();
-                        }
-                        if (row.getCell(10) != null) {
-                            roomKwh = row.getCell(10).getNumericCellValue();
-                        }
-                        if (row.getCell(11) != null) {
-                            spaKwh = row.getCell(11).getNumericCellValue();
-                        }
-                        if (row.getCell(12) != null) {
-                            adminKwh = row.getCell(12).getNumericCellValue();
-                        }
 
                         // Format the double values to 2 decimal places
                         totalMoney = Double.parseDouble(DECIMAL_FORMAT.format(totalMoney));
@@ -457,7 +489,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("MHElectric").document(year)
                 .collection(month).document(day)
-                .set(data)
+                .set(data, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> Log.d("Firestore", "Data successfully written!"))
                 .addOnFailureListener(e -> Log.w("Firestore", "Error writing document", e));
     }
@@ -488,4 +520,46 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             }
         }
     }
+
+//    private void listFilesFromFirebaseStorage() {
+//        FirebaseStorage storage = FirebaseStorage.getInstance();
+//        StorageReference storageRef = storage.getReference();
+//        StorageReference folderRef = storageRef.child("Files/" + folderName);
+//
+//        folderRef.listAll().addOnSuccessListener(result -> {
+//            List<FileRecord> files = new ArrayList<>();
+//            int totalItems = result.getItems().size();
+//            int[] itemsProcessed = {0}; // Array to hold the count of processed items
+//
+//            for (StorageReference itemRef : result.getItems()) {
+//                itemRef.getDownloadUrl().addOnSuccessListener(downloadUrl -> {
+//                    String fileName = itemRef.getName();
+//                    FileRecord fileRecord = new FileRecord(fileName, "", folderName, downloadUrl.toString());
+//
+//                    // Check if the file's folder name matches the selected folder
+//                    if (folderName.equals(fileRecord.getFolderName())) {
+//                        files.add(fileRecord);
+//                    }
+//
+//                    // Check if all items are processed
+//                    itemsProcessed[0]++;
+//                    if (itemsProcessed[0] == totalItems) {
+//                        adapter.updateFileList(files);
+//                    }
+//                }).addOnFailureListener(e -> Log.e(TAG, "Failed to get download URL for " + itemRef.getName(), e));
+//            }
+//
+//            // Handle the case where there are no items
+//            if (totalItems == 0) {
+//                adapter.updateFileList(files);
+//            }
+//        }).addOnFailureListener(e -> Log.e(TAG, "Failed to list files", e));
+//    }
+
+
+
+
+
+
+
 }

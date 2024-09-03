@@ -4,12 +4,14 @@ public class FileRecord {
 
     private String fileName;
     private String importDate;
-    private String folderName; // Add this field
+    private String folderName;
+    private String url;
 
-    public FileRecord(String fileName, String importDate, String folderName) {
+    public FileRecord(String fileName, String importDate, String folderName, String url) {
         this.fileName = fileName;
         this.importDate = importDate;
-        this.folderName = folderName; // Initialize the folder name
+        this.folderName = folderName;
+        this.url = url;
     }
 
     public String getFileName() {
@@ -24,6 +26,10 @@ public class FileRecord {
         return folderName; // Getter for folder name
     }
 
+    public String getUrl() {
+        return url;
+    }
+
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
@@ -34,5 +40,9 @@ public class FileRecord {
 
     public void setFolderName(String folderName) {
         this.folderName = folderName;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

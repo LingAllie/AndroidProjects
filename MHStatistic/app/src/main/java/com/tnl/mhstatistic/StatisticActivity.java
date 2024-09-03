@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -48,6 +49,7 @@ public class StatisticActivity extends Fragment {
     private SharedViewModel viewModel;
 
     private TextView txtSelectDate;
+    private Button btnPrevDate, btnNextDate;
     private CombinedChart combinedChart;
     private TextView txtRoomData, txtEventData, txtTotalKWh, txtTotalMoney;
     private FirebaseFirestore db;
@@ -62,6 +64,7 @@ public class StatisticActivity extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_statistic, container, false);
 
+        // Initialize Views and ViewModel
         txtSelectDate = view.findViewById(R.id.txtSelectDate);
         combinedChart = view.findViewById(R.id.combinedChart);
         txtRoomData = view.findViewById(R.id.txtRoomData);
@@ -78,52 +81,48 @@ public class StatisticActivity extends Fragment {
         calendar = Calendar.getInstance();
         dateFormat = new SimpleDateFormat("d-MMM-yyyy", Locale.getDefault());
 
+        // Initialize with current date if no date is selected
+        Date initialDate = viewModel.getSelectedDate().getValue();
+        if (initialDate == null) {
+            initialDate = calendar.getTime();
+            viewModel.setSelectedDate(initialDate);
+        }
+        String currentDate = dateFormat.format(initialDate);
+        txtSelectDate.setText(currentDate);
+
         viewModel.getSelectedDate().observe(getViewLifecycleOwner(), date -> {
             if (date != null) {
-                String formattedDate = dateFormat.format(date); // Format Date to String
-                txtSelectDate.setText(formattedDate); // Set String to TextView
-                loadDataForDate(date.getYear() + 1900, date.getMonth() + 1, date.getDate()); // Use Date to load data
+                String formattedDate = dateFormat.format(date);
+                txtSelectDate.setText(formattedDate);
+                loadDataForDate(date.getYear() + 1900, date.getMonth() + 1, date.getDate());
             }
         });
 
-
-        // Initialize with current date if no date is selected
-        String currentDate = dateFormat.format(calendar.getTime());
-        txtSelectDate.setText(currentDate);
-
         txtSelectDate.setOnClickListener(v -> showDatePicker());
-
         btnPrevDate.setOnClickListener(v -> changeDate(-1));
         btnNextDate.setOnClickListener(v -> changeDate(1));
 
-        // Restore date from savedInstanceState if available
         if (savedInstanceState != null) {
             String savedDateStr = savedInstanceState.getString("selectedDate");
             if (savedDateStr != null) {
                 try {
                     Date savedDate = dateFormat.parse(savedDateStr);
-                    viewModel.setSelectedDate(savedDate); // Convert String to Date and set in ViewModel
+                    viewModel.setSelectedDate(savedDate);
                 } catch (Exception e) {
                     Log.e(TAG, "Error parsing saved date", e);
                 }
             }
         }
 
-
-        // Set chart value selected listener
         combinedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry e, Highlight h) {
-                Log.d(TAG, "onValueSelected called");
                 if (e instanceof BarEntry) {
                     BarEntry barEntry = (BarEntry) e;
                     int index = (int) barEntry.getX();
-                    Log.d(TAG, "Bar Entry Selected: Index = " + index);
                     if (data != null && data.containsKey("F&BFee") && data.containsKey("RoomFee") &&
                             data.containsKey("SpaFee") && data.containsKey("AdminPublicFee")) {
                         showInfoDialog(index);
-                    } else {
-                        Log.d(TAG, "Data map is null or does not contain the expected keys.");
                     }
                 }
             }
@@ -136,6 +135,8 @@ public class StatisticActivity extends Fragment {
 
         return view;
     }
+
+
 
     private void showDatePicker() {
         int year = calendar.get(Calendar.YEAR);
@@ -214,6 +215,7 @@ public class StatisticActivity extends Fragment {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading data from Firestore", e);
+                    Toast.makeText(requireContext(), "Error loading data from Firestore", Toast.LENGTH_SHORT).show();
                     showDefaultCharts();
                 });
     }
@@ -423,7 +425,7 @@ public class StatisticActivity extends Fragment {
         // Create and show the dialog
         new AlertDialog.Builder(getContext())
                 .setTitle(category)
-                .setMessage(String.format("Electric Bill: %,.2f VND\nElectric Use: %,.2f kWh", fee, kwh))
+                .setMessage(String.format("Electric Bill: %,.2f VND\n\nElectric Use: %,.2f kWh", fee, kwh))
                 .setPositiveButton(android.R.string.ok, null)
                 .show();
     }
