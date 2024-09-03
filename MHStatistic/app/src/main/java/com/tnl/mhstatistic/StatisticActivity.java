@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.tnl.shared.SharedViewModel;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -39,8 +41,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Observer;
 
 public class StatisticActivity extends Fragment {
+
+    private SharedViewModel viewModel;
 
     private TextView txtSelectDate;
     private CombinedChart combinedChart;
@@ -67,10 +72,20 @@ public class StatisticActivity extends Fragment {
         Button btnPrevDate = view.findViewById(R.id.btnPrevDate);
         Button btnNextDate = view.findViewById(R.id.btnNextDate);
 
+        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         db = FirebaseFirestore.getInstance();
 
         calendar = Calendar.getInstance();
         dateFormat = new SimpleDateFormat("d-MMM-yyyy", Locale.getDefault());
+
+        viewModel.getSelectedDate().observe(getViewLifecycleOwner(), date -> {
+            if (date != null) {
+                String formattedDate = dateFormat.format(date); // Format Date to String
+                txtSelectDate.setText(formattedDate); // Set String to TextView
+                loadDataForDate(date.getYear() + 1900, date.getMonth() + 1, date.getDate()); // Use Date to load data
+            }
+        });
+
 
         // Initialize with current date if no date is selected
         String currentDate = dateFormat.format(calendar.getTime());
@@ -81,21 +96,29 @@ public class StatisticActivity extends Fragment {
         btnPrevDate.setOnClickListener(v -> changeDate(-1));
         btnNextDate.setOnClickListener(v -> changeDate(1));
 
-        // Load initial data
-        loadDataForDate(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+        // Restore date from savedInstanceState if available
+        if (savedInstanceState != null) {
+            String savedDateStr = savedInstanceState.getString("selectedDate");
+            if (savedDateStr != null) {
+                try {
+                    Date savedDate = dateFormat.parse(savedDateStr);
+                    viewModel.setSelectedDate(savedDate); // Convert String to Date and set in ViewModel
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing saved date", e);
+                }
+            }
+        }
+
 
         // Set chart value selected listener
         combinedChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
             @Override
             public void onValueSelected(Entry e, Highlight h) {
                 Log.d(TAG, "onValueSelected called");
-
                 if (e instanceof BarEntry) {
                     BarEntry barEntry = (BarEntry) e;
                     int index = (int) barEntry.getX();
-
                     Log.d(TAG, "Bar Entry Selected: Index = " + index);
-
                     if (data != null && data.containsKey("F&BFee") && data.containsKey("RoomFee") &&
                             data.containsKey("SpaFee") && data.containsKey("AdminPublicFee")) {
                         showInfoDialog(index);
@@ -111,7 +134,6 @@ public class StatisticActivity extends Fragment {
             }
         });
 
-
         return view;
     }
 
@@ -123,13 +145,16 @@ public class StatisticActivity extends Fragment {
         DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
                 (view, selectedYear, selectedMonth, selectedDay) -> {
                     calendar.set(selectedYear, selectedMonth, selectedDay);
-                    String selectedDate = dateFormat.format(calendar.getTime());
-                    txtSelectDate.setText(selectedDate);
+                    Date selectedDate = calendar.getTime();
+                    String formattedDate = dateFormat.format(selectedDate);
+                    txtSelectDate.setText(formattedDate);
+                    viewModel.setSelectedDate(selectedDate); // Set Date in ViewModel
                     loadDataForDate(selectedYear, selectedMonth + 1, selectedDay);
                 }, year, month, day);
 
         datePickerDialog.show();
     }
+
 
     private void changeDate(int dayOffset) {
         calendar.add(Calendar.DAY_OF_MONTH, dayOffset);

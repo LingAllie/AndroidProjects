@@ -11,6 +11,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.tnl.entity.FileRecord;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,17 @@ public class SharedViewModel extends ViewModel {
     private final MutableLiveData<List<String>> folderList = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Map<String, List<FileRecord>>> folderFilesMap = new MutableLiveData<>(new HashMap<>());
     private final MutableLiveData<String> selectedFolder = new MutableLiveData<>();
+    private final MutableLiveData<Date> selectedDate = new MutableLiveData<>();
     private final String TAG = "SVM";
+
+
+    public LiveData<Date> getSelectedDate() {
+        return selectedDate;
+    }
+
+    public void setSelectedDate(Date date) {
+        selectedDate.setValue(date);
+    }
 
     public LiveData<List<String>> getFolderList() {
         return folderList;
