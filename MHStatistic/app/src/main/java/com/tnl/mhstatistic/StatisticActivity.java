@@ -157,14 +157,29 @@ public class StatisticActivity extends Fragment {
 
 
     private void changeDate(int dayOffset) {
-        calendar.add(Calendar.DAY_OF_MONTH, dayOffset);
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH) + 1;
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
-        String selectedDate = dateFormat.format(calendar.getTime());
-        txtSelectDate.setText(selectedDate);
-        loadDataForDate(year, month, day);
+        // Get the currently selected date from the ViewModel
+        Date selectedDate = viewModel.getSelectedDate().getValue();
+
+        if (selectedDate != null) {
+            // Update calendar with the selected date
+            calendar.setTime(selectedDate);
+            calendar.add(Calendar.DAY_OF_MONTH, dayOffset);
+
+            // Update the ViewModel with the new date
+            Date newDate = calendar.getTime();
+            viewModel.setSelectedDate(newDate);
+
+            // Update the UI with the new date
+            String selectedDateStr = dateFormat.format(newDate);
+            txtSelectDate.setText(selectedDateStr);
+
+            // Load data for the new date
+            loadDataForDate(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH));
+        } else {
+            Log.e(TAG, "Selected date is null. Cannot change date.");
+        }
     }
+
 
     private void loadDataForDate(int year, int month, int day) {
         db.collection("MHElectric")
