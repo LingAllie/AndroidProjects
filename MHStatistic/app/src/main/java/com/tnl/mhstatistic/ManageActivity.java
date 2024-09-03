@@ -126,7 +126,8 @@ public class ManageActivity extends Fragment {
         builder.setPositiveButton("Rename", (dialog, which) -> {
             String newFolderName = edtFolderName.getText().toString().trim();
             if (!newFolderName.isEmpty()) {
-                renameFolder(oldFolderName, newFolderName, position);
+                viewModel.renameFolder(this.requireContext(), oldFolderName, newFolderName);
+                folderAdapter.notifyItemChanged(position); // Notify the adapter that the item has changed
             } else {
                 Toast.makeText(getContext(), "Folder name cannot be empty", Toast.LENGTH_SHORT).show();
             }
@@ -136,6 +137,7 @@ public class ManageActivity extends Fragment {
 
         builder.create().show();
     }
+
 
     private void showDeleteConfirmationDialog(String folderName, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
