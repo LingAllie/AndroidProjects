@@ -17,5 +17,6 @@
     <color name="colorLine">#E91E63</color>   <!-- Example color for Line chart -->
     <color name="colorTextBar">#000000</color>   <!-- Example color for text -->
     <color name="colorTextLine">#00BCD4</color>
+
 </resources>
 

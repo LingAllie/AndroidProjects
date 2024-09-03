@@ -81,7 +81,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_list_excel, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_file, container, false);
 
         recyclerView = rootView.findViewById(R.id.recyclerViewFile);
         floatBtnFile = rootView.findViewById(R.id.floatBtnFile);
@@ -185,17 +185,14 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
     private final ActivityResultLauncher<Intent> storageActivityResultLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
-            new ActivityResultCallback<ActivityResult>() {
-                @Override
-                public void onActivityResult(ActivityResult result) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        if (Environment.isExternalStorageManager()) {
-                            // Permission granted
-                            Log.d(TAG, "Permission is granted");
-                        } else {
-                            // Permission denied
-                            Log.d(TAG, "Permission is denied");
-                        }
+            result -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (Environment.isExternalStorageManager()) {
+                        // Permission granted
+                        Log.d(TAG, "Permission is granted");
+                    } else {
+                        // Permission denied
+                        Log.d(TAG, "Permission is denied");
                     }
                 }
             }
@@ -214,32 +211,37 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         if (requestCode == PICK_FILE_REQUEST_CODE && resultCode == getActivity().RESULT_OK && data != null) {
             Uri uri = data.getData();
             if (uri != null) {
-                try {
-                    String fileName = getFileName(uri);
-                    String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
-                    FileRecord fileRecord = new FileRecord(fileName, importDate, folderName);
+                String fileName = getFileName(uri);
+                if (fileName.endsWith(".xlsx")) {
+                    try {
+                        String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
+                        FileRecord fileRecord = new FileRecord(fileName, importDate, folderName);
 
-                    // Log for debugging
-                    Log.d(TAG, "Adding file: " + fileRecord.getFileName());
+                        // Log for debugging
+                        Log.d(TAG, "Adding file: " + fileRecord.getFileName());
 
-                    // Add file to ViewModel
-                    viewModel.addFile(requireContext(), folderName, fileRecord);
+                        // Add file to ViewModel
+                        viewModel.addFile(requireContext(), folderName, fileRecord);
 
-                    // Update adapter
-                    adapter.addFileRecord(fileRecord);
+                        // Update adapter
+                        adapter.addFileRecord(fileRecord);
 
-                    // Save file to local storage
-                    saveFile(uri, fileName);
+                        // Save file to local storage
+                        saveFile(uri, fileName);
 
-                    // Process Excel File and save data to Firestore
-                    processExcelFile(uri);
+                        // Process Excel File and save data to Firestore
+                        processExcelFile(uri);
 
-                } catch (IOException e) {
-                    Toast.makeText(getContext(), "Error reading file", Toast.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        Toast.makeText(getContext(), "Error reading file", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Error: Only .xlsx files are accepted", Toast.LENGTH_SHORT).show();
                 }
             }
         }
     }
+
 
     private String getFileName(Uri uri) {
         String[] projection = {DocumentsContract.Document.COLUMN_DISPLAY_NAME};
@@ -281,7 +283,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
                     }
                     inputStream.close();
                     outputStream.flush();
-                    Toast.makeText(getContext(), "File saved as: " + file.getName(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Please wait..." , Toast.LENGTH_SHORT).show();
                 }
             }
         } else {
@@ -289,18 +291,6 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         }
     }
 
-
-    private File renameFile(File file) {
-        String fileName = file.getName();
-        String newFileName = fileName;
-        int i = 1;
-        while (file.exists()) {
-            newFileName = fileName + " (" + i + ")";
-            file = new File(file.getParent(), newFileName);
-            i++;
-        }
-        return file;
-    }
 
     private void processExcelFile(Uri uri) {
         try (InputStream inputStream = getContext().getContentResolver().openInputStream(uri)) {

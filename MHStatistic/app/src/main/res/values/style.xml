@@ -9,4 +9,5 @@
     <style name="CustomBottomNavigationView" parent="Widget.Design.BottomNavigationView">
         <item name="android:layout_height">56dp</item> <!-- Adjust the height here -->
     </style>
+
 </resources>

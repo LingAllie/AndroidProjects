@@ -87,61 +87,6 @@ public class SharedViewModel extends ViewModel {
         }
     }
 
-    public void renameFolder(Context context, String oldFolderName, String newFolderName) {
-        List<String> folders = folderList.getValue();
-        if (folders != null && folders.contains(oldFolderName)) {
-            int index = folders.indexOf(oldFolderName);
-            folders.set(index, newFolderName);
-            folderList.setValue(folders);
-
-            // Rename folder files map entry
-            Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
-            if (filesMap != null) {
-                List<FileRecord> files = filesMap.remove(oldFolderName);
-                if (files != null) {
-                    filesMap.put(newFolderName, files);
-                    folderFilesMap.setValue(filesMap);
-                }
-            }
-
-            // Save to SharedPreferences
-            SharedPreferencesHelper.saveFoldersToPreferences(context, folders);
-            SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
-
-            // Rename in Firestore
-            FirebaseFirestore firestore = FirebaseFirestore.getInstance();
-            // Create a new document with the new folder name
-            firestore.collection("MHElectric").document(newFolderName)
-                    .set(new HashMap<>()) // Optionally, include existing data here
-                    .addOnSuccessListener(aVoid -> {
-                        // Copy existing data from old folder to new folder
-                        firestore.collection("MHElectric").document(oldFolderName)
-                                .get()
-                                .addOnSuccessListener(documentSnapshot -> {
-                                    if (documentSnapshot.exists()) {
-                                        firestore.collection("MHElectric").document(newFolderName)
-                                                .set(documentSnapshot.getData()) // Copy data
-                                                .addOnSuccessListener(aVoid1 -> {
-                                                    // Delete the old document
-                                                    firestore.collection("MHElectric").document(oldFolderName)
-                                                            .delete()
-                                                            .addOnSuccessListener(aVoid2 ->
-                                                                    Log.d(TAG, "Folder renamed in Firestore"))
-                                                            .addOnFailureListener(e ->
-                                                                    Log.e(TAG, "Error deleting old folder in Firestore", e));
-                                                })
-                                                .addOnFailureListener(e ->
-                                                        Log.e(TAG, "Error copying data to new folder in Firestore", e));
-                                    }
-                                })
-                                .addOnFailureListener(e ->
-                                        Log.e(TAG, "Error fetching old folder data from Firestore", e));
-                    })
-                    .addOnFailureListener(e ->
-                            Log.e(TAG, "Error creating new folder in Firestore", e));
-        }
-    }
-
 
     public void addFile(Context context, String folderName, FileRecord fileRecord) {
         Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
@@ -165,8 +110,6 @@ public class SharedViewModel extends ViewModel {
             SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
         }
     }
-
-
 
 
     public void removeFile(Context context, String folderName, String fileName) {

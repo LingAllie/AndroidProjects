@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:backgroundTint="@color/white"
+    android:background="@color/white"
     tools:context=".ManageActivity">
 
     <TextView
@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:src="@drawable/baseline_create_new_folder_24"
-        android:backgroundTint="@color/colorAdminPublic"
+        android:backgroundTint="#F6BE1D"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"/>
 

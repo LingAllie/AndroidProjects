@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import com.tnl.entity.FileRecord;
 
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,7 @@ public class SharedPreferencesHelper {
         SharedPreferences sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         Gson gson = new Gson();
+        Collections.sort(folderList, Collections.reverseOrder()); // Ensure it is sorted before saving
         String json = gson.toJson(folderList);
         editor.putString(FOLDER_LIST_KEY, json);
         editor.apply();

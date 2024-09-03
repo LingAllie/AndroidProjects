@@ -31,7 +31,7 @@ public class ManageActivity extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_import, container, false);
+        View view = inflater.inflate(R.layout.fragment_folder, container, false);
 
         recyclerViewFolder = view.findViewById(R.id.recyclerViewFolder);
         floatBtnFolder = view.findViewById(R.id.floatBtnFolder);
@@ -96,48 +96,8 @@ public class ManageActivity extends Fragment {
     }
 
     private void onFolderLongClick(String folderName, int position) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Options");
-
-        builder.setItems(new String[]{"Rename", "Delete"}, (dialog, which) -> {
-            switch (which) {
-                case 0: // Rename
-                    showRenameFolderDialog(folderName, position);
-                    break;
-                case 1: // Delete
-                    showDeleteConfirmationDialog(folderName, position);
-                    break;
-            }
-        });
-
-        builder.create().show();
+        showDeleteConfirmationDialog(folderName, position);
     }
-
-    private void showRenameFolderDialog(String oldFolderName, int position) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Rename Folder");
-
-        View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_rename_folder, null);
-        builder.setView(dialogView);
-
-        EditText edtFolderName = dialogView.findViewById(R.id.edtFolderName);
-        edtFolderName.setText(oldFolderName);
-
-        builder.setPositiveButton("Rename", (dialog, which) -> {
-            String newFolderName = edtFolderName.getText().toString().trim();
-            if (!newFolderName.isEmpty()) {
-                viewModel.renameFolder(this.requireContext(), oldFolderName, newFolderName);
-                folderAdapter.notifyItemChanged(position); // Notify the adapter that the item has changed
-            } else {
-                Toast.makeText(getContext(), "Folder name cannot be empty", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-
-        builder.create().show();
-    }
-
 
     private void showDeleteConfirmationDialog(String folderName, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
@@ -148,12 +108,6 @@ public class ManageActivity extends Fragment {
         builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
 
         builder.create().show();
-    }
-
-    private void renameFolder(String oldFolderName, String newFolderName, int position) {
-        viewModel.removeFolder(this.requireContext(), oldFolderName);
-        viewModel.addFolder(this.requireContext(), newFolderName);
-        folderAdapter.notifyItemChanged(position); // Notify the adapter that the item has changed
     }
 
     private void deleteFolder(String folderName, int position) {

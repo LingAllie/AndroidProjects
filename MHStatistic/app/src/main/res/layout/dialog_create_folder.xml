@@ -9,5 +9,6 @@
         android:id="@+id/edtFolderName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter folder name"/>
+        android:hint="Enter year of import files"
+        android:inputType="number"/>
 </LinearLayout>
