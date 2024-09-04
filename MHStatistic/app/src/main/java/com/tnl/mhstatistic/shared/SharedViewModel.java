@@ -173,8 +173,10 @@ public class SharedViewModel extends ViewModel {
                 });
     }
 
-    public void loadFiles() {
+    public void loadFiles(String selectedFolderName) {
         firestore.collection("Files")
+                .document(selectedFolderName)
+                .collection("Files")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -188,7 +190,7 @@ public class SharedViewModel extends ViewModel {
                             // Log the details of each fileRecord
                             Log.d(TAG, "FileRecord - Name: " + fileName + ", Folder: " + folderName + ", Date: " + importDate + ", URL: " + url);
 
-                            FileRecord fileRecord = new FileRecord(fileName, folderName, importDate, url);
+                            FileRecord fileRecord = new FileRecord(fileName, importDate, folderName, url);
                             fileRecordsList.add(fileRecord);
                         }
 

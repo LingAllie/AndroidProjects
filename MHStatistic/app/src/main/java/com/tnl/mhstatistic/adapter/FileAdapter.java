@@ -33,7 +33,7 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     public void onBindViewHolder(@NonNull FileViewHolder holder, int position) {
         FileRecord fileRecord = fileRecords.get(position);
         holder.textViewFileName.setText(fileRecord.getFileName());
-        holder.textViewImportDate.setText(fileRecord.getFolderName());
+        holder.textViewImportDate.setText(fileRecord.getImportDate());
 
     }
 

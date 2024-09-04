@@ -77,7 +77,7 @@ public class StatisticActivity extends Fragment {
         db = FirebaseFirestore.getInstance();
 
         calendar = Calendar.getInstance();
-        dateFormat = new SimpleDateFormat("d-MMM-yyyy", Locale.getDefault());
+        dateFormat = new SimpleDateFormat("d-MM-yyyy", Locale.getDefault());
 
         // Initialize with current date if no date is selected
         Date initialDate = viewModel.getSelectedDate().getValue();
@@ -192,18 +192,21 @@ public class StatisticActivity extends Fragment {
 
 
     private void loadDataForDate(int year, int month, int day) {
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.ENGLISH); // Ensure English locale
+        String monthName = monthFormat.format(new Date(year - 1900, month - 1, 1));
+
         db.collection("MHStatistic")
                 .document(String.valueOf(year))
-                .collection(new SimpleDateFormat("MMM", Locale.getDefault()).format(new Date(year - 1900, month - 1, 1)))
+                .collection(monthName) // Use English month name
                 .document(String.valueOf(day))
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        data = documentSnapshot.getData(); // Assign to global variable
+                        data = documentSnapshot.getData();
                         if (data != null) {
                             DecimalFormat decimalFormat = new DecimalFormat("#,##0.00");
                             // For integer values
-                            int room = ((Long) data.get("Room")).intValue(); // Firestore returns Long for integer values
+                            int room = ((Long) data.get("Room")).intValue();
                             int event = ((Long) data.get("Event")).intValue();
 
                             // For floating-point values
@@ -218,7 +221,6 @@ public class StatisticActivity extends Fragment {
                         }
                     } else {
                         Log.d(TAG, "No data found for the selected date.");
-                        // Show default values
                         showDefaultCharts();
                     }
                 })
@@ -228,6 +230,7 @@ public class StatisticActivity extends Fragment {
                     showDefaultCharts();
                 });
     }
+
 
 
     private void updateCharts(Map<String, Object> data) {

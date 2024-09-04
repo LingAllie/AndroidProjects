@@ -111,18 +111,17 @@ public class ImportActivity extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        viewModel.loadFiles();
+        viewModel.loadFiles(folderName);
         viewModel.getSelectedFolder().observe(getViewLifecycleOwner(), selectedFolder -> {
             Log.d(TAG, "Selected Folder: " + selectedFolder);
-
             if (selectedFolder != null) {
                 viewModel.getFileRecords().observe(getViewLifecycleOwner(), fileRecords -> {
                     if (fileRecords != null) {
                         Log.d(TAG, "File Records Count: " + fileRecords.size());
-
                         List<FileRecord> filteredFiles = new ArrayList<>();
                         for (FileRecord file : fileRecords) {
-                            String folderYear = file.getImportDate();
+                            String folderYear = file.getFolderName();
+                            Log.d(TAG, "FileRecord Import Date: " + folderYear);
                             if (folderYear.equals(selectedFolder)) {
                                 filteredFiles.add(file);
                             }
@@ -134,9 +133,10 @@ public class ImportActivity extends Fragment {
             }
         });
 
+
         // Load files if not already loaded
         if (viewModel.getFileRecords().getValue() == null || viewModel.getFileRecords().getValue().isEmpty()) {
-            viewModel.loadFiles();
+            viewModel.loadFiles(folderName);
         }
     }
 
@@ -324,14 +324,23 @@ public class ImportActivity extends Fragment {
         fileData.put("folderName", fileRecord.getFolderName());
         fileData.put("url", fileRecord.getUrl());
 
-        firestore.collection("Files").document(fileRecord.getFileName()).set(fileData, SetOptions.merge())
+        // Construct the Firestore path for the document
+        String path = "Files/" + folderName + "/" + fileRecord.getFileName();
+
+        // Save the file data to the Firestore document at the new path
+        firestore.collection("Files")
+                .document(folderName)
+                .collection("Files")
+                .document(fileRecord.getFileName())
+                .set(fileData, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "FileRecord saved successfully");
                     viewModel.addFile(requireContext(), folderName, fileRecord);
                     adapter.addFileRecord(fileRecord);
                 })
                 .addOnFailureListener(e -> Log.e(TAG, "Error saving FileRecord", e));
-    }
+
+            }
 
 
     private void processExcelFile(Uri uri) {
