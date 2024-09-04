@@ -222,7 +222,7 @@ public class ImportActivity extends Fragment {
                 String fileName = getFileName(uri);
                 if (fileName.endsWith(".xlsx")) {
                     try {
-                        String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.English).format(new Date());
+                        String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
                         FileRecord fileRecord = new FileRecord(fileName, importDate, folderName, "");
 
                         // Log for debugging
