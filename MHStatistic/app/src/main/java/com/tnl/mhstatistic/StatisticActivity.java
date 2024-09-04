@@ -77,7 +77,7 @@ public class StatisticActivity extends Fragment {
         db = FirebaseFirestore.getInstance();
 
         calendar = Calendar.getInstance();
-        dateFormat = new SimpleDateFormat("d-MM-yyyy", Locale.getDefault());
+        dateFormat = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault());
 
         // Initialize with current date if no date is selected
         Date initialDate = viewModel.getSelectedDate().getValue();
@@ -194,7 +194,7 @@ public class StatisticActivity extends Fragment {
     private void loadDataForDate(int year, int month, int day) {
         SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.ENGLISH); // Ensure English locale
         String monthName = monthFormat.format(new Date(year - 1900, month - 1, 1));
-
+Log.d(TAG, "loaddatagordate: " + String.valueOf(year) + ", " + monthName + ", " + String.valueOf(day));
         db.collection("MHStatistic")
                 .document(String.valueOf(year))
                 .collection(monthName) // Use English month name

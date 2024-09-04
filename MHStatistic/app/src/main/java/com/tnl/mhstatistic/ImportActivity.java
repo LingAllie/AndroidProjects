@@ -222,7 +222,7 @@ public class ImportActivity extends Fragment {
                 String fileName = getFileName(uri);
                 if (fileName.endsWith(".xlsx")) {
                     try {
-                        String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date());
+                        String importDate = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.English).format(new Date());
                         FileRecord fileRecord = new FileRecord(fileName, importDate, folderName, "");
 
                         // Log for debugging
@@ -398,12 +398,12 @@ public class ImportActivity extends Fragment {
                             calendar.setTime(excelDate);
                         }
                         String year = folderName; // Use folderName as the year
-                        String month = new SimpleDateFormat("MMM", Locale.getDefault()).format(calendar.getTime());
+                        String month = new SimpleDateFormat("MMM", Locale.ENGLISH).format(calendar.getTime());
                         String day = excelDate != null ? String.valueOf(calendar.get(Calendar.DAY_OF_MONTH)) : "Unknown";
 
                         // Log the extracted values for debugging
                         Log.d(TAG, String.format("Row %d: Date: %s, Room: %d, Event: %d, TotalMoney: %.2f, TotalKwh: %.2f, F&B Money: %.2f, Room Money: %.2f, Spa Money: %.2f, Admin Money: %.2f, F&B kWh: %.2f, Room kWh: %.2f, Spa kWh: %.2f, Admin kWh: %.2f",
-                                row.getRowNum(), excelDate != null ? new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(excelDate) : "Unknown",
+                                row.getRowNum(), excelDate != null ? new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(excelDate) : "Unknown",
                                 room, event, totalMoney, totalKwh, fbMoney, roomMoney, spaMoney, adminMoney, fbKwh, roomKwh, spaKwh, adminKwh));
 
                         // Check if file already exists
@@ -412,7 +412,7 @@ public class ImportActivity extends Fragment {
                             for (FileRecord fileRecord : files) {
                                 if (fileRecord.getFileName().equals(getFileName(uri))) {
                                     // Update existing file record's date
-                                    fileRecord.setImportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
+                                    fileRecord.setImportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.ENGLISH).format(new Date()));
                                     viewModel.updateFile(folderName, fileRecord);
                                     adapter.notifyDataSetChanged();
                                     break;
