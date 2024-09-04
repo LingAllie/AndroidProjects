@@ -1,4 +1,4 @@
-package com.tnl.adapter;
+package com.tnl.mhstatistic.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,7 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.tnl.mhstatistic.R;
-import com.tnl.shared.CustomLongClickListener;
+import com.tnl.mhstatistic.shared.CustomLongClickListener;
 
 import java.util.List;
 

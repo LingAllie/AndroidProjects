@@ -1,7 +1,6 @@
-package com.tnl.shared;
+package com.tnl.mhstatistic.shared;
 
 import android.content.Context;
-import android.net.Uri;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -10,7 +9,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.tnl.entity.FileRecord;
+import com.tnl.mhstatistic.entity.FileRecord;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,7 +81,7 @@ public class SharedViewModel extends ViewModel {
             SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
 
             // Save to Firestore
-            firestore.collection("MHElectric").document(folderName)
+            firestore.collection("MHStatistic").document(folderName)
                     .set(new HashMap<>())
                     .addOnSuccessListener(aVoid -> Log.d(TAG, "Folder added to Firestore"))
                     .addOnFailureListener(e -> Log.e(TAG, "Error adding folder to Firestore", e));
@@ -107,7 +106,7 @@ public class SharedViewModel extends ViewModel {
             SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
 
             // Remove from Firestore
-            firestore.collection("MHElectric").document(folderName)
+            firestore.collection("MHStatistic").document(folderName)
                     .delete()
                     .addOnSuccessListener(aVoid -> Log.d(TAG, "Folder removed from Firestore"))
                     .addOnFailureListener(e -> Log.e(TAG, "Error removing folder from Firestore", e));
@@ -138,25 +137,13 @@ public class SharedViewModel extends ViewModel {
         }
     }
 
-    public void removeFile(Context context, String folderName, String fileName) {
-        Map<String, List<FileRecord>> filesMap = folderFilesMap.getValue();
-        if (filesMap != null) {
-            List<FileRecord> files = filesMap.get(folderName);
-            if (files != null) {
-                files.removeIf(fileRecord -> fileRecord.getFileName().equals(fileName));
-                folderFilesMap.setValue(filesMap);
-                SharedPreferencesHelper.saveFolderFilesToPreferences(context, filesMap);
-            }
-        }
-    }
-
     public void setSelectedFolder(String folderName) {
         selectedFolder.setValue(folderName);
     }
 
     public void loadFolders() {
         // Load folders from Firestore
-        firestore.collection("MHElectric")
+        firestore.collection("MHStatistic")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -166,7 +153,7 @@ public class SharedViewModel extends ViewModel {
                             folders.add(folderName);
 
                             // Assuming file records are stored as a subcollection in each folder
-                            firestore.collection("MHElectric").document(folderName)
+                            firestore.collection("MHStatistic").document(folderName)
                                     .get()
                                     .addOnCompleteListener(fileTask -> {
                                         if (fileTask.isSuccessful()) {

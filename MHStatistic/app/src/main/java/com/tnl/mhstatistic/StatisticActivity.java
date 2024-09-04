@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,7 +30,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.tnl.shared.SharedViewModel;
+import com.tnl.mhstatistic.shared.SharedViewModel;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -42,7 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Observer;
 
 public class StatisticActivity extends Fragment {
 
@@ -92,11 +90,22 @@ public class StatisticActivity extends Fragment {
 
         viewModel.getSelectedDate().observe(getViewLifecycleOwner(), date -> {
             if (date != null) {
+                // Log year, month, and date values
+                int year = date.getYear() + 1900; // Adjusting for the offset in Date class
+                int month = date.getMonth() + 1; // Adjusting for the offset in Date class
+                int day = date.getDate();
+
+                Log.d(TAG, "Observed Date: Year=" + year + ", Month=" + month + ", Day=" + day);
+
+                // Format the date and update UI
                 String formattedDate = dateFormat.format(date);
                 txtSelectDate.setText(formattedDate);
-                loadDataForDate(date.getYear() + 1900, date.getMonth() + 1, date.getDate());
+
+                // Load data for the selected date
+                loadDataForDate(year, month, day);
             }
         });
+
 
         txtSelectDate.setOnClickListener(v -> showDatePicker());
         btnPrevDate.setOnClickListener(v -> changeDate(-1));
@@ -183,7 +192,7 @@ public class StatisticActivity extends Fragment {
 
 
     private void loadDataForDate(int year, int month, int day) {
-        db.collection("MHElectric")
+        db.collection("MHStatistic")
                 .document(String.valueOf(year))
                 .collection(new SimpleDateFormat("MMM", Locale.getDefault()).format(new Date(year - 1900, month - 1, 1)))
                 .document(String.valueOf(day))

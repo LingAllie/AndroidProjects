@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:cardBackgroundColor="#185B37"
     android:layout_margin="5dp">
 
     <LinearLayout
@@ -15,33 +13,25 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
+        <TextView
+            android:id="@+id/textViewFileName"
             android:layout_width="0dp"
-            android:layout_weight="2"
-            android:layout_height="25dp"
-            android:src="@drawable/excel_icon"/>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_weight="6"
+            android:layout_weight="3"
+            android:layout_margin="4dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:textAlignment="center"
+            android:textSize="14sp"
+            android:text="File name"/>
 
-            <TextView
-                android:id="@+id/textViewFileName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:text="File name"/>
-
-            <TextView
-                android:id="@+id/textViewDate"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="8sp"
-                android:text="Added date"/>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/textViewDate"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:textAlignment="center"
+            android:layout_height="wrap_content"
+            android:textSize="8sp"
+            android:text="Added date"/>
     </LinearLayout>
 
 
-</androidx.cardview.widget.CardView>
+</LinearLayout>

@@ -27,15 +27,28 @@
 
     </LinearLayout>
 
-    <!-- Sorting options Spinner -->
-    <Spinner
-        android:id="@+id/spinnerSortOptions"
+    <TextView
+        android:id="@+id/tvFoldName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="2022"
+        android:textSize="16sp"
+        android:textColor="#AB6E13"
+        android:textStyle="bold"
         android:layout_alignParentRight="true"
         android:layout_marginRight="10dp"
-        android:layout_below="@+id/btnBack"
-        android:entries="@array/sort_options"/>
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="List imported files"
+        android:textAlignment="center"
+        android:textSize="14sp"
+        android:background="@color/teal_200"
+        android:padding="5dp"
+        android:layout_below="@id/btnBack"/>
 
     <!-- ListView to display imported files -->
     <androidx.recyclerview.widget.RecyclerView
@@ -46,7 +59,7 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentEnd="true"
         android:layout_marginTop="20dp"
-        android:layout_below="@+id/spinnerSortOptions"/>
+        android:layout_below="@+id/tvTitle"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatBtnFile"

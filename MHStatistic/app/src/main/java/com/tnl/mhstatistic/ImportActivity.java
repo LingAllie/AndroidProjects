@@ -1,7 +1,6 @@
 package com.tnl.mhstatistic;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -15,13 +14,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -31,7 +28,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -41,9 +37,9 @@ import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.tnl.adapter.FileAdapter;
-import com.tnl.entity.FileRecord;
-import com.tnl.shared.SharedViewModel;
+import com.tnl.mhstatistic.adapter.FileAdapter;
+import com.tnl.mhstatistic.entity.FileRecord;
+import com.tnl.mhstatistic.shared.SharedViewModel;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -55,18 +51,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class ImportActivity extends Fragment implements FileAdapter.OnFileLongClickListener{
+public class ImportActivity extends Fragment {
 
     private static final int PICK_FILE_REQUEST_CODE = 1;
     private static final int STORAGE_PERMISSION_CODE = 100;
@@ -81,6 +75,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
     private LinearLayout btnBack;
     private Spinner spinnerSortOptions;
     private List<FileRecord> fileList;
+    private TextView tvFoldName;
 
     private FirebaseFirestore firestore;
 
@@ -91,7 +86,7 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         recyclerView = rootView.findViewById(R.id.recyclerViewFile);
         floatBtnFile = rootView.findViewById(R.id.floatBtnFile);
         btnBack = rootView.findViewById(R.id.btnBack);
-        spinnerSortOptions = rootView.findViewById(R.id.spinnerSortOptions);
+        tvFoldName = rootView.findViewById(R.id.tvFoldName);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
 
@@ -102,16 +97,17 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             viewModel.setSelectedFolder(folderName);
         }
 
+        tvFoldName.setText(folderName);
+
         setupRecyclerView();
         setupFabButton();
         setupBackButton();
-        setupSortSpinner();
 
         return rootView;
     }
 
     private void setupRecyclerView() {
-        adapter = new FileAdapter(new ArrayList<>(), this);
+        adapter = new FileAdapter(new ArrayList<>());
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
@@ -156,32 +152,6 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
     private void setupBackButton() {
         btnBack.setOnClickListener(v -> navigateToImportFragment());
-    }
-
-    private void setupSortSpinner() {
-        spinnerSortOptions.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                sortFileList();
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-                // Do nothing
-            }
-        });
-    }
-
-    private void sortFileList() {
-        if (fileList == null) return;
-
-        String selectedOption = (String) spinnerSortOptions.getSelectedItem();
-        if ("Sort by Name".equals(selectedOption)) {
-            fileList.sort((f1, f2) -> f1.getFileName().compareToIgnoreCase(f2.getFileName()));
-        } else if ("Sort by Date Added".equals(selectedOption)) {
-            fileList.sort(Comparator.comparing(FileRecord::getImportDate));
-        }
-        adapter.updateFileList(fileList);
     }
 
     private void navigateToImportFragment() {
@@ -387,18 +357,18 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
 
                         // Initialize variables with default values
                         Date excelDate = row.getCell(0) != null ? row.getCell(0).getDateCellValue() : null;
-                        int room = row.getCell(1) != null ? (int) row.getCell(1).getNumericCellValue() : 0;
-                        int event = row.getCell(2) != null ? (int) row.getCell(2).getNumericCellValue() : 0;
-                        double totalMoney = row.getCell(3) != null ? row.getCell(3).getNumericCellValue() : 0;
-                        double totalKwh = row.getCell(4) != null ? row.getCell(4).getNumericCellValue() : 0;
-                        double fbMoney = row.getCell(5) != null ? row.getCell(5).getNumericCellValue() : 0;
-                        double roomMoney = row.getCell(6) != null ? row.getCell(6).getNumericCellValue() : 0;
-                        double spaMoney = row.getCell(7) != null ? row.getCell(7).getNumericCellValue() : 0;
-                        double adminMoney = row.getCell(8) != null ? row.getCell(8).getNumericCellValue() : 0;
-                        double fbKwh = row.getCell(9) != null ? row.getCell(9).getNumericCellValue() : 0;
-                        double roomKwh = row.getCell(10) != null ? row.getCell(10).getNumericCellValue() : 0;
-                        double spaKwh = row.getCell(11) != null ? row.getCell(11).getNumericCellValue() : 0;
-                        double adminKwh = row.getCell(12) != null ? row.getCell(12).getNumericCellValue() : 0;
+                        int room = (row.getCell(1) != null ? (int) row.getCell(1).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(1).getNumericCellValue() * -1) : (int) row.getCell(1).getNumericCellValue();
+                        int event = (row.getCell(2) != null ? (int) row.getCell(2).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(2).getNumericCellValue() * -1) : (int) row.getCell(2).getNumericCellValue();
+                        double totalMoney = (row.getCell(3) != null ? row.getCell(3).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(3).getNumericCellValue() * -1) : (int) row.getCell(3).getNumericCellValue();
+                        double totalKwh = (row.getCell(4) != null ? row.getCell(4).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(4).getNumericCellValue() * -1) : (int) row.getCell(4).getNumericCellValue();
+                        double fbMoney = (row.getCell(5) != null ? row.getCell(5).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(5).getNumericCellValue() * -1) : (int) row.getCell(5).getNumericCellValue();
+                        double roomMoney = (row.getCell(6) != null ? row.getCell(6).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(6).getNumericCellValue() * -1) : (int) row.getCell(6).getNumericCellValue();
+                        double spaMoney = (row.getCell(7) != null ? row.getCell(7).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(7).getNumericCellValue() * -1) : (int) row.getCell(7).getNumericCellValue();
+                        double adminMoney = (row.getCell(8) != null ? row.getCell(8).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(8).getNumericCellValue() * -1) : (int) row.getCell(8).getNumericCellValue();
+                        double fbKwh = (row.getCell(9) != null ? row.getCell(9).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(9).getNumericCellValue() * -1) : (int) row.getCell(9).getNumericCellValue();
+                        double roomKwh = (row.getCell(10) != null ? row.getCell(10).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(10).getNumericCellValue() * -1) : (int) row.getCell(10).getNumericCellValue();
+                        double spaKwh = (row.getCell(11) != null ? row.getCell(11).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(11).getNumericCellValue() * -1) : (int) row.getCell(11).getNumericCellValue();
+                        double adminKwh = (row.getCell(12) != null ? row.getCell(12).getNumericCellValue() : 0) < 0 ? (int) (row.getCell(12).getNumericCellValue() * -1) : (int) row.getCell(12).getNumericCellValue();
 
 
                         // Format the double values to 2 decimal places
@@ -487,27 +457,11 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
         data.put("AdminPublickwh", adminKwh);
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("MHElectric").document(year)
+        db.collection("MHStatistic").document(year)
                 .collection(month).document(day)
                 .set(data, SetOptions.merge())
                 .addOnSuccessListener(aVoid -> Log.d("Firestore", "Data successfully written!"))
                 .addOnFailureListener(e -> Log.w("Firestore", "Error writing document", e));
-    }
-
-
-    @Override
-    public void onFileLongClick(FileRecord file) {
-        new AlertDialog.Builder(getContext())
-                .setTitle("Delete File")
-                .setMessage("Are you sure you want to delete " + file.getFileName() + "?")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    // Handle file deletion
-                    viewModel.removeFile(requireContext(), folderName, file.getFileName());
-                    adapter.updateFileList(viewModel.getFolderFilesMap().getValue().get(folderName));
-                    Toast.makeText(getContext(), "File deleted", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
     }
 
     @Override
@@ -520,46 +474,4 @@ public class ImportActivity extends Fragment implements FileAdapter.OnFileLongCl
             }
         }
     }
-
-//    private void listFilesFromFirebaseStorage() {
-//        FirebaseStorage storage = FirebaseStorage.getInstance();
-//        StorageReference storageRef = storage.getReference();
-//        StorageReference folderRef = storageRef.child("Files/" + folderName);
-//
-//        folderRef.listAll().addOnSuccessListener(result -> {
-//            List<FileRecord> files = new ArrayList<>();
-//            int totalItems = result.getItems().size();
-//            int[] itemsProcessed = {0}; // Array to hold the count of processed items
-//
-//            for (StorageReference itemRef : result.getItems()) {
-//                itemRef.getDownloadUrl().addOnSuccessListener(downloadUrl -> {
-//                    String fileName = itemRef.getName();
-//                    FileRecord fileRecord = new FileRecord(fileName, "", folderName, downloadUrl.toString());
-//
-//                    // Check if the file's folder name matches the selected folder
-//                    if (folderName.equals(fileRecord.getFolderName())) {
-//                        files.add(fileRecord);
-//                    }
-//
-//                    // Check if all items are processed
-//                    itemsProcessed[0]++;
-//                    if (itemsProcessed[0] == totalItems) {
-//                        adapter.updateFileList(files);
-//                    }
-//                }).addOnFailureListener(e -> Log.e(TAG, "Failed to get download URL for " + itemRef.getName(), e));
-//            }
-//
-//            // Handle the case where there are no items
-//            if (totalItems == 0) {
-//                adapter.updateFileList(files);
-//            }
-//        }).addOnFailureListener(e -> Log.e(TAG, "Failed to list files", e));
-//    }
-
-
-
-
-
-
-
 }

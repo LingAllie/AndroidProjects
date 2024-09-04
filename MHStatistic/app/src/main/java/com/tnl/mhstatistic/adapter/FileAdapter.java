@@ -1,4 +1,4 @@
-package com.tnl.adapter;
+package com.tnl.mhstatistic.adapter;
 
 import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
@@ -9,20 +9,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.tnl.entity.FileRecord;
+import com.tnl.mhstatistic.entity.FileRecord;
 import com.tnl.mhstatistic.R;
-import com.tnl.shared.CustomLongClickListener;
 
 import java.util.List;
 
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
 
     private List<FileRecord> fileRecords;
-    private OnFileLongClickListener onFileLongClickListener;
 
-    public FileAdapter(List<FileRecord> fileRecords, OnFileLongClickListener onFileLongClickListener) {
+    public FileAdapter(List<FileRecord> fileRecords) {
         this.fileRecords = fileRecords;
-        this.onFileLongClickListener = onFileLongClickListener;
     }
 
     @NonNull
@@ -38,10 +35,6 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         holder.textViewFileName.setText(fileRecord.getFileName());
         holder.textViewImportDate.setText(fileRecord.getFolderName());
 
-        holder.itemView.setOnTouchListener(new CustomLongClickListener(v -> {
-            onFileLongClickListener.onFileLongClick(fileRecord);
-            return true;
-        }));
     }
 
     @Override
@@ -78,10 +71,6 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             textViewFileName = itemView.findViewById(R.id.textViewFileName);
             textViewImportDate = itemView.findViewById(R.id.textViewDate);
         }
-    }
-
-    public interface OnFileLongClickListener {
-        void onFileLongClick(FileRecord fileRecord);
     }
 
 }

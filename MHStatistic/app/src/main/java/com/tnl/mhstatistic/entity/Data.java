@@ -1,4 +1,4 @@
-package com.tnl.entity;
+package com.tnl.mhstatistic.entity;
 
 public class Data {
     private String date;

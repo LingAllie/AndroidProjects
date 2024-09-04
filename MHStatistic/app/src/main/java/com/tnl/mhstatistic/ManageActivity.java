@@ -15,8 +15,8 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.tnl.adapter.FolderAdapter;
-import com.tnl.shared.SharedViewModel;
+import com.tnl.mhstatistic.adapter.FolderAdapter;
+import com.tnl.mhstatistic.shared.SharedViewModel;
 
 import java.util.ArrayList;
 import java.util.List;

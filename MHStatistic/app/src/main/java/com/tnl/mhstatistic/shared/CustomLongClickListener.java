@@ -1,4 +1,4 @@
-package com.tnl.shared;
+package com.tnl.mhstatistic.shared;
 
 import android.os.Handler;
 import android.view.MotionEvent;

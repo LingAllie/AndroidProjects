@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "607518455866",
-    "project_id": "mhstatistic",
-    "storage_bucket": "mhstatistic.appspot.com"
+    "project_number": "720505483306",
+    "project_id": "mhelectric-c62e8",
+    "storage_bucket": "mhelectric-c62e8.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:607518455866:android:b2cd71ff70e63f83cc5d03",
+        "mobilesdk_app_id": "1:720505483306:android:e212458b3708ed93eed353",
         "android_client_info": {
           "package_name": "com.tnl.mhstatistic"
         }
@@ -15,26 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBaPYYc_O8bjGIguh8rg_4QY1sd2eiv9B4"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:607518455866:android:b24830503a0df8f0cc5d03",
-        "android_client_info": {
-          "package_name": "com.tnl.statistic"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBaPYYc_O8bjGIguh8rg_4QY1sd2eiv9B4"
+          "current_key": "AIzaSyASD3dauzslwAmoqPegQvRqCcZ6Z9H6y-A"
         }
       ],
       "services": {
